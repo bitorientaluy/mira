@@ -392,7 +392,7 @@ El equipo **Bit Oriental** (grupo TC4) está integrado por tres estudiantes orga
 11 / 33  
 **4.10.4 Recursos** 
 
-**Software y herramientas**: ver sección 4.12 (Miro, Trello, GitHub, Packet Tracer, VirtualBox, Docker, VS Code). 
+**Software y herramientas**: ver sección 4.12 (Miro, Trello, GitHub, ChatGPT/OpenAI, Packet Tracer, VirtualBox, Docker, VS Code). 
 
 **Hardware de laboratorio**: equipos de los integrantes y máquinas virtuales; emulador Cisco Packet Tracer para los dispositivos de red. 
 
@@ -446,6 +446,7 @@ Siguiendo la guía de la Tutoría de Gestión de Registro Documental, toda tarea
 | Trello  | Gestión de tareas: Backlog → … → Aprobado  | Enlace a tarjetas (T-XXX) |
 | GitHub  | Control de versiones del código  | Commits, issues y ramas |
 | Google Drive  | Repositorio documental oficial PROYECTO MIRA | Actas, borradores, entregables |
+| ChatGPT / OpenAI | Apoyo al equipo en redacción, revisión de código y documentación (herramienta de trabajo; no integrada al sistema, ver 4.5.2) | Registro en el historial de tareas |
 | WhatsApp / Meet | Comunicación del equipo y tutorías  | Registro en actas |
 
 **4.12.2 Stack tecnológico de la solución** 
