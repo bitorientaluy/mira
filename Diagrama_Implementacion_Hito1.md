@@ -14,7 +14,6 @@ flowchart TB
     subgraph INET["INTERNET"]
         CIU["Ciudadano<br/>navegador movil / PC"]
         ADMREM["Administrador remoto<br/>VPN IPsec IKEv2"]
-        OPENAI["API externa de IA<br/>api.openai.com : 443"]
     end
 
     subgraph PERIM["ZONA PERIMETRAL"]
@@ -49,7 +48,6 @@ flowchart TB
     ASA -->|"DNAT 80/443 Permitir"| WEB
     ASA -.->|"Internet hacia LAN: DENEGAR"| SW3560
     WEB -->|"HTTPS 443<br/>unica regla DMZ hacia INSIDE"| POSIX
-    POSIX -->|"NAT/PAT 443"| OPENAI
 
     ASA --- SW3560
     SW3560 --- SW2960
@@ -143,7 +141,6 @@ sequenceDiagram
     participant FW as ASA 5505
     participant WEB as SRV-WEB-MIRA (DMZ)
     participant APP as App Laravel (SRV-POSIX)
-    participant IA as API de IA
     participant DB as PostgreSQL/PostGIS
     participant OP as Operador (VLAN 2)
 
@@ -151,8 +148,7 @@ sequenceDiagram
     FW->>WEB: DNAT 443 (regla de publicacion)
     WEB->>APP: Proxy HTTPS 443 (DMZ hacia VLAN 3)
     CIU->>APP: Formulario + ubicacion en mapa + foto
-    APP->>IA: Sugerencia de categoria y area (NAT/PAT 443)
-    IA-->>APP: Categoria y area responsable
+    CIU->>APP: Selecciona categoria (define el area responsable)
     APP->>DB: INSERT incidencia (geometry, indice GIST)
     DB-->>APP: Codigo unico de seguimiento
     APP-->>CIU: Incidencia registrada

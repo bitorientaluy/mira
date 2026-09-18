@@ -392,7 +392,7 @@ El equipo **Bit Oriental** (grupo TC4) está integrado por tres estudiantes orga
 11 / 33  
 **4.10.4 Recursos** 
 
-**Software y herramientas**: ver sección 4.12 (Miro, Trello, GitHub, ChatGPT/OpenAI, Packet Tracer, VirtualBox, Docker, VS Code). 
+**Software y herramientas**: ver sección 4.12 (Miro, Trello, GitHub, Packet Tracer, VirtualBox, Docker, VS Code). 
 
 **Hardware de laboratorio**: equipos de los integrantes y máquinas virtuales; emulador Cisco Packet Tracer para los dispositivos de red. 
 
@@ -687,8 +687,7 @@ Se utiliza PostgreSQL 16 (PostgreSQL Global Development Group, 2026\) con PostGI
 | geom  | GEOMETRY(Point, 4326\)  | Coordenadas geográficas (WGS84) |
 | foto\_url  | VARCHAR(255)  | Ruta de la imagen (almacenada en storage) |
 | estado  | VARCHAR(15)  | Pendiente / En proceso / Resuelto |
-| area\_id | BIGINT FK  | Área responsable (se toma de la categoría; el administrador puede cambiarla)Área propuesta por IA |
-| confianza\_ia  | NUMERIC(5,2)  | Confianza de la clasificación (0-100) |
+| area\_id | BIGINT FK  | Área responsable (se toma de la categoría; el administrador puede cambiarla) |
 | creado\_en  | TIMESTAMPTZ  | Fecha de creación |
 | resuelto\_en  | TIMESTAMPTZ  | Fecha de resolución (nullable) |
 
@@ -877,7 +876,6 @@ El firewall ASA 5505 implementa las siguientes reglas:
 | VLAN 2 y VLAN 3 | VLAN 1 (admin) | TCP 22, 3389 (SSH/RDP) | Denegar (solo TI administra desde VLAN 1\) |
 | DMZ (SRV-WEB-MIRA 10.10.40.10) | SRV-POSIX (10.10.30.14) | TCP 443 | Permitir (proxy Nginx hacia la app) |
 | DMZ | Resto de INSIDE (VLAN 1-3) | — | Denegar |
-| SRV-POSIX (10.10.30.14) | Internet (api.openai.com) | TCP 443 | Permitir (NAT/PAT, servicio de IA) |
 
 Principios: **deny by default**, zona por zona; el servicio web se publica **solo** desde la DMZ; el tráfico hacia la base de datos se mantiene en VLAN 3 y la segmentación impide el acceso lateral desde Usuarios. 
 
@@ -915,7 +913,7 @@ Se combinan pruebas **funcionales** (caja negra sobre los casos de uso), **de in
 
 | Nivel  | Alcance  | Momento |
 | :---- | :---- | :---- |
-| Unitarias  | Servicios y modelos (clasificación IA, validación)  | Durante el desarrollo |
+| Unitarias  | Servicios y modelos (validación de datos, reglas de negocio)  | Durante el desarrollo |
 | Integración  | API \+ BD (PostGIS), autenticación y roles  | S7-S8 |
 | Funcionales  | Casos de uso: reporte, gestión, mapa  | S8-S9 |
 | Infraestructura  | Conectividad VLAN/DMZ, firewall y DNS/DHCP  | S10-S11 |
@@ -927,7 +925,7 @@ Se combinan pruebas **funcionales** (caja negra sobre los casos de uso), **de in
 
 **CP-02** Incidencia sin ubicación → se rechaza con mensaje claro. 
 
-**CP-03** Clasificación IA → sugiere categoría y área; la exactitud medida sobre un conjunto de prueba de al menos 50 incidencias etiquetadas manualmente es ≥ 70 % (las sugerencias con confianza \< 70 % se derivan a clasificación manual). **CP-04** Cambio de estado por operador → historial registrado y notificación al ciudadano. **CP-05** Seguimiento del reporte por un ciudadano registrado (y visitante sin cuenta: solo ve el mapa de pendientes) → muestra estado correcto. **CP-06** Mapa: visualización de incidencias del distrito filtrado. 
+**CP-04** Cambio de estado por operador → historial registrado y notificación al ciudadano. **CP-05** Seguimiento del reporte por un ciudadano registrado (y visitante sin cuenta: solo ve el mapa de pendientes) → muestra estado correcto. **CP-06** Mapa: visualización de incidencias del distrito filtrado. 
 
 23 / 33  
 **CP-07** Autenticación de operador y control de permisos (operador no accede a área admin). 
@@ -938,7 +936,7 @@ Se combinan pruebas **funcionales** (caja negra sobre los casos de uso), **de in
 
 **4.20.4 Métricas** 
 
-Porcentaje de casos aprobados ≥ **90 %** antes del Hito 3 (objetivo OE7). Exactitud de clasificación IA ≥ 70 % sobre un conjunto de prueba de al menos 50 incidencias etiquetadas manualmente (resultado del H2, ver 4.4.3). 
+Porcentaje de casos aprobados ≥ **90 %** antes del Hito 3 (objetivo OE7). 
 
 Tiempo de respuesta del panel ≤ 3 s con 200 usuarios (RNF01). 
 
@@ -990,7 +988,7 @@ MIRA integra de forma coherente **software, datos, infraestructura y seguridad**
 
 | Dimensión  | Contribución a la solución |
 | :---- | :---- |
-| Software (DFB)  | Sistema web Laravel 13/PHP 8.4: reporte ciudadano, clasificación IA y panel interno |
+| Software (DFB)  | Sistema web Laravel 13/PHP 8.4: reporte ciudadano, clasificación por categorías y panel interno |
 | Base de datos  | PostgreSQL/PostGIS: georreferenciación, análisis territorial y respaldos |
 | POSIX  | SRV-POSIX con Docker: aplicación, Nginx y base de datos |
 | Redes MS  | SRV-AD-DNS: dominio mira.local, DNS, DHCP, GPO y agrupamiento por roles |
@@ -1001,7 +999,7 @@ MIRA integra de forma coherente **software, datos, infraestructura y seguridad**
 
 1\. El ciudadano accede al sitio **http/ https://srv-web-mira** (DMZ) desde su móvil e inicia sesión con su cuenta (sin cuenta solo puede ver el mapa de incidencias pendientes). 2\. Completa el formulario y marca la ubicación en el mapa. 
 
-3\. El servicio de IA (SRV-POSIX → OpenAI) sugiere categoría y área responsable. 4\. El reporte se persiste en PostgreSQL con geometría PostGIS (índice GIST). 5\. El operador (VLAN 2\) abre el panel, ve el mapa y gestiona el estado (Pendiente → En proceso → Resuelto). 
+3\. Selecciona la categoría de la incidencia, que determina el área responsable asociada. 4\. El reporte se persiste en PostgreSQL con geometría PostGIS (índice GIST). 5\. El operador (VLAN 2\) abre el panel, ve el mapa y gestiona el estado (Pendiente → En proceso → Resuelto). 
 
 6\. El ciudadano consulta el estado en la sección de seguimiento de su cuenta y recibe la respuesta. 
 
@@ -1053,8 +1051,6 @@ Leaflet. (2026). *Leaflet documentation*. [https://leafletjs.com/reference.html]
 Ley N.º 18.331. Protección de Datos Personales y Acción de "Habeas Data". (2008, 11 de agosto). IMPO. https://www.impo.com.uy/bases/leyes/18331-2008 
 
 Microsoft. (2025). *Windows Server 2022 documentation: Active Directory Domain Services*. https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/windows-server-2022 
-
-OpenAI. (2026). *API Reference: chat completions*. https://platform.openai.com/docs/api-reference 
 
 OSGeo (PostGIS). (2026). *PostGIS 3.4 spatial and geographic objects for PostgreSQL*. https://postgis.net/documentation/ 
 
@@ -1198,7 +1194,6 @@ La matriz anterior vincula cada dimensión de la rúbrica con las secciones del 
 | R03  | Dificultad con PostGIS  | Media  | Medio  | Capacitación, apoyo tutor BD | CTA  | Activo |
 | R05  | Sin datos reales de la IM  | Alta  | Medio  | Datos sintéticos \+ supuestos validados | CTA  | Activo |
 | R06  | Fallas en laboratorio de red | Media  | Medio  | Simulación Packet Tracer | IRS  | Activo |
-| R07  | Costo API OpenAI alto  | Baja  | Bajo  | Caché, uso acotado a prototipo | DFB  | Activo |
 | R08  | Pérdida de integridad de datos | Baja  | Alto  | Transacciones,  respaldos diarios | IRS/CTA  | Activo |
 | R09  | Actas/borradores vacíos en Drive | Alta  | Medio  | Completar actas, revisión semanal | GPD  | Activo |
 
@@ -1233,7 +1228,7 @@ La matriz anterior vincula cada dimensión de la rúbrica con las secciones del 
 | RNF09  | No  funcional | Accesibilidad mínima (WCAG A)  | Baja  | Calidad |
 | RNF10  | No  funcional | Cumplimiento de Ley 18.331 (datos personales)  | Alta  | Legal |
 
-**Tabla 7.4 — Casos de prueba (resumen; 9 casos principales)** 
+**Tabla 7.4 — Casos de prueba (resumen; 8 casos principales)** 
 
 | ID  | Nombre  | Precondición  | Pasos clave  | Resultado esperado  | Estado |
 | ----- | ----- | :---- | :---- | ----- | ----- |
