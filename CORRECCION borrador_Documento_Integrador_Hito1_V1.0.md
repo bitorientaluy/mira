@@ -39,7 +39,7 @@ Firma del coordinador
 1 / 33  
 **ÍNDICE DE CONTENIDOS** 
 
-4.1 Resumen ejecutivo 1 4.2 Introducción 1 4.3 Planteamiento del problema 2 4.4 Objetivos del proyecto 3 4.5 Alcance, exclusiones y limitaciones 4 4.6 Factibilidad y viabilidad 5 4.7 Análisis FODA y gestión de riesgos 6 4.8 Entregables e hitos 7 4.9 Planificación y seguimiento 8 4.10 Organización y recursos 9 4.11 Metodología de trabajo 10 4.12 Procedimientos, herramientas y tecnología 11 4.13 Relevamiento y requisitos 11 4.14 Análisis y diseño 13 4.15 Desarrollo e implementación de software 14 4.16 Base de datos 14 4.17 POSIX (servidor Linux) 17 4.18 Redes Microsoft 18 4.19 Conectividad y seguridad de redes 19 4.20 Pruebas y validación 21 4.21 Infraestructura, despliegue y soporte 22 4.22 Solución integrada 23 4.23 Conclusiones 23 4.24 Bibliografía (normas APA) 24 4.25 Anexos 25 4.26 Hoja testigo 26 Anexo documental — Control de versiones 26 4.27 Matriz de alineación con la rúbrica 2026 27 7\. Tablas mínimas de gestión 27 4.28 Evidencias técnicas mínimas 30 4.29 Checklist de entrega (Hito 1\) 30 
+4.1 Resumen ejecutivo 1 4.2 Introducción 1 4.3 Planteamiento del problema 2 4.4 Objetivos del proyecto 3 4.5 Alcance, exclusiones y limitaciones 4 4.6 Factibilidad y viabilidad 5 4.7 Análisis FODA y gestión de riesgos 6 4.8 Entregables e hitos 7 4.9 Planificación y seguimiento 8 4.10 Organización y recursos 9 4.11 Metodología de trabajo 10 4.12 Procedimientos, herramientas y tecnología 11 4.13 Relevamiento y requisitos 11 4.14 Análisis y diseño 13 4.15 Desarrollo e implementación de software 14 4.16 Base de datos 14 4.17 POSIX (servidor Linux) 17 4.18 Redes Microsoft 18 4.19 Conectividad y seguridad de redes 19 4.20 Pruebas y validación 21 4.21 Infraestructura, despliegue y soporte 22 4.22 Solución integrada 23 4.23 Conclusiones 23 4.24 Bibliografía (normas APA) 24 4.25 Anexos 25 (Anexo H — ESRE según IEEE 830) 27 4.26 Hoja testigo 26 Anexo documental — Control de versiones 26 4.27 Matriz de alineación con la rúbrica 2026 27 7\. Tablas mínimas de gestión 27 4.28 Evidencias técnicas mínimas 30 4.29 Checklist de entrega (Hito 1\) 30 
 
 2 / 33  
 **4.1 Resumen ejecutivo** 
@@ -1117,6 +1117,144 @@ Control de versiones del documento integrador: historial en portada y sección 4
 | UAT  | Pruebas de aceptación del usuario |
 | RBAC  | Control de acceso basado en roles |
 
+**Anexo H — Especificación de Requisitos de Software (ESRE) según IEEE 830** 
+
+*Versión preliminar del **Hito 1**. Este anexo reorganiza, bajo la estructura de la norma IEEE 830-1998, los requisitos ya presentados en las secciones 4.5, 4.13, 4.14 y en la Tabla 7.3 del cuerpo del documento. En esta etapa los requisitos tienen carácter **preliminar**: se consolidan con el prototipo funcional del Hito 2 y se validan contra los casos de prueba en el Hito 3. Ante cualquier divergencia, prevalece el cuerpo del documento.* 
+
+**H.1 Introducción** 
+
+**H.1.1 Propósito.** Especificar los requisitos funcionales y no funcionales del sistema MIRA (Mapa de Incidencias, Reportes y Atención) para el registro y la gestión de incidencias de limpieza urbana de Montevideo. Está dirigido al equipo Bit Oriental y a los docentes tutores de la Tecnicatura en Redes y Software del ITI, y sirve de base para el diseño, la implementación y las pruebas de los Hitos 2 y 3. 
+
+**H.1.2 Alcance del producto.** MIRA es un sistema web que permite al ciudadano registrado reportar incidencias de limpieza con descripción, categoría, ubicación georreferenciada y evidencia fotográfica, y al personal de la Intendencia de Montevideo gestionarlas mediante un panel interno con listado, mapa y cuaderno de trabajo. Quedan fuera del alcance los puntos enumerados en la sección 4.5.2, entre ellos la integración con sistemas internos de la Intendencia, las aplicaciones móviles nativas, el despliegue en producción física y la integración con modelos de lenguaje (LLM) o servicios externos de inteligencia artificial. 
+
+**H.1.3 Definiciones, acrónimos y abreviaturas.** Se aplican las definiciones del Anexo G — Glosario. Adicionalmente: 
+
+| Término  | Definición |
+| :---- | :---- |
+| ESRE  | Especificación de Requisitos de Software (IEEE 830-1998) |
+| RF / RNF  | Requisito funcional / Requisito no funcional |
+| CU  | Caso de uso |
+| CP  | Caso de prueba (Tabla 7.4) |
+| IM  | Intendencia de Montevideo |
+| MIRA  | Mapa de Incidencias, Reportes y Atención (el sistema especificado) |
+| GIST  | Índice generalizado de árbol de búsqueda, usado por PostGIS para datos espaciales |
+| Incidencia pendiente  | Incidencia registrada que aún no fue tomada por un operador (estado inicial) |
+
+**H.1.4 Referencias.** Las fuentes citadas se detallan en la sección 4.24 (Bibliografía, normas APA). Documentos internos de referencia: plantilla ITI V2.0, rúbrica de evaluación 2026 y Anexos A a G del presente documento. 
+
+**H.1.5 Visión general.** La sección H.2 describe el producto en términos generales (perspectiva, funciones, usuarios, restricciones y suposiciones). La sección H.3 detalla los requisitos específicos: interfaces externas, funciones, rendimiento, restricciones de diseño y atributos del sistema. La sección H.4 presenta la matriz de trazabilidad entre requisitos, casos de uso y casos de prueba. 
+
+**H.2 Descripción general** 
+
+**H.2.1 Perspectiva del producto.** MIRA es un producto nuevo y autónomo, no un componente de un sistema mayor ni un reemplazo de un sistema existente de la IM. Se estructura en tres capas (sección 4.14.4): presentación (vistas Blade y JavaScript con mapa Leaflet sobre tiles de OpenStreetMap), aplicación (Laravel 13 sobre PHP 8.4: controladores y servicios) y datos (Eloquent con SQL y PostGIS). Se despliega sobre contenedores Docker orquestados con Docker Compose, en la infraestructura descrita en las secciones 4.17 a 4.21. 
+
+**H.2.2 Funciones del producto.** En términos generales, el sistema debe permitir: 
+
+a) el registro de incidencias georreferenciadas por parte de ciudadanos autenticados; 
+b) la consulta pública, sin autenticación, del mapa de incidencias pendientes sin datos personales; 
+c) el seguimiento del estado de los reportes propios por parte del ciudadano; 
+d) la clasificación de la incidencia por categoría, con asignación del área responsable asociada; 
+e) la gestión interna de incidencias por parte de operadores (listado, filtros, mapa, cambio de estado e historial); 
+f) la administración de usuarios, roles, categorías y áreas; 
+g) la explotación estadística y la exportación de datos. 
+
+**H.2.3 Características de los usuarios.** Cuatro perfiles, según la sección 4.13.3: 
+
+| Perfil  | Formación técnica esperada  | Frecuencia de uso  | Funciones accesibles |
+| :---- | :---- | :---- | :---- |
+| Visitante (no registrado) | Ninguna; usuario general de internet | Ocasional  | Mapa público de incidencias pendientes, sin datos personales |
+| Ciudadano registrado  | Ninguna; usuario de smartphone | Ocasional (ante una incidencia) | Crear reportes, adjuntar foto, seguimiento e historial propio |
+| Inspector / operador IM  | Usuario administrativo, capacitación interna | Diaria (jornada laboral) | Listado y mapa, asignación, cambio de estado, respuesta al ciudadano |
+| Administrador  | Perfil técnico / TI  | Semanal  | Usuarios, roles, categorías, áreas, estadísticas y registros de auditoría |
+
+**H.2.4 Restricciones.** 
+
+**R-01 Tecnológicas**: el stack está fijado por la sección 4.12.2 (PHP 8.4 / Laravel 13, Nginx, PostgreSQL 16 con PostGIS, Docker). 
+**R-02 De infraestructura**: el sistema opera en la topología segmentada de la sección 4.19 (VLAN 1-3 y DMZ); el panel interno no se publica a Internet. 
+**R-03 Legales**: tratamiento de datos personales conforme a la Ley 18.331 de la República Oriental del Uruguay. 
+**R-04 Académicas**: el despliegue y la verificación se realizan en laboratorio o simulación (Packet Tracer, VirtualBox), no en producción de la IM. 
+**R-05 De estándares**: código conforme a PSR-12 y documentación conforme a la plantilla ITI V2.0. 
+
+**H.2.5 Suposiciones y dependencias.** 
+
+**S-01** No se dispone de datos oficiales de la IM; se utilizan datos sintéticos representativos y supuestos documentados que la contraparte académica debe validar (sección 4.5.3). 
+**S-02** El proyecto no tiene vínculo formal con la Intendencia de Montevideo: es un caso de estudio académico. 
+**S-03** Se asume disponibilidad de los tiles de OpenStreetMap para el componente de mapa. 
+**S-04** Se asume licencia Security Plus en el Cisco ASA 5505 para habilitar OUTSIDE, INSIDE y DMZ sin restricciones (nota de la sección 4.19.2). 
+**S-05** La disponibilidad del laboratorio académico condiciona la verificación de los requisitos de red e infraestructura. 
+
+**H.3 Requisitos específicos** 
+
+**H.3.1 Interfaces externas** 
+
+**H.3.1.1 Interfaces de usuario.** Interfaz web responsive: formulario público de reporte con mapa interactivo, pantalla de confirmación con código de seguimiento, sección de seguimiento de reportes propios y panel interno con listado, filtros, vista mapa, detalle con historial y portal de estadísticas. Los wireframes de baja fidelidad se mantienen en el tablero Miro (Anexo D). 
+
+**H.3.1.2 Interfaces de hardware.** Cliente: dispositivo con navegador moderno; se utiliza el GPS del dispositivo para la geolocalización opcional. Servidor: 2 a 3 máquinas virtuales de 4 vCPU y 8 GB de RAM (sección 4.21.5). 
+
+**H.3.1.3 Interfaces de software.** Endpoints internos de la sección 4.15.4 (`/api/incidencias`, `/api/incidencias.geojson`, `/api/incidencias/{id}`, `/api/incidencias/{id}/categoria`, `/api/incidencias/{id}/estado`, `/api/estadisticas`); librería Leaflet sobre tiles de OpenStreetMap; PostgreSQL 16 con PostGIS; servicios de dominio del entorno Microsoft (DNS y, opcionalmente, LDAP/AD para la autenticación del panel interno, sección 4.18.4). El sistema **no** consume servicios externos de inteligencia artificial (sección 4.5.2). 
+
+**H.3.1.4 Interfaces de comunicación.** HTTP/HTTPS (80/443) para la publicación web desde la DMZ; HTTPS interno entre SRV-WEB-MIRA y SRV-POSIX; TCP 5432 restringido a la red interna del contenedor; SMTP para las notificaciones por correo. Las políticas de tráfico aplicables son las de la sección 4.19.4. 
+
+**H.3.2 Funciones (requisitos funcionales)** 
+
+Los requisitos conservan la numeración de la sección 4.13.4 y de la Tabla 7.3. Los criterios de aceptación son **criterios a verificar** en los Hitos 2 y 3; ningún requisito se encuentra validado en el Hito 1. 
+
+| ID  | Requisito  | Prioridad  | Criterio de aceptación (a verificar)  | Verifica  | Estado H1 |
+| ----- | :---- | ----- | :---- | ----- | ----- |
+| RF01  | Registrar una incidencia con descripción, categoría, ubicación y foto opcional; solo usuarios registrados y autenticados | Alta  | Un usuario autenticado crea una incidencia con ubicación marcada; el envío sin ubicación se rechaza con mensaje claro; la foto admite hasta 5 MB | CP-01, CP-02  | Especificado |
+| RF02  | Asociar a cada incidencia un código único de seguimiento | Alta  | Toda incidencia creada recibe un código único, visible en la sección de seguimiento de la cuenta | CP-01, CP-05  | Especificado |
+| RF03  | Geo-referenciar coordenadas y almacenarlas como geometría PostGIS | Alta  | Las coordenadas se persisten como GEOMETRY(Point, 4326\) con índice espacial GIST | CP-01  | Especificado |
+| RF04  | Categorización: el ciudadano elige la categoría (con área responsable asociada); el administrador puede cambiar categoría y área | Alta  | Al crear la incidencia se asigna el área de la categoría elegida; el cambio por el administrador queda registrado en el historial | Previsto H2  | Especificado |
+| RF05  | Panel de operadores: listado, filtros por estado, categoría, área y período, detalle y edición | Alta  | El operador filtra el listado y la vista mapa, y accede al detalle de una incidencia | CP-06, CP-07  | Especificado |
+| RF06  | Gestión de estados: Pendiente → En proceso → Resuelto (estados canónicos) | Alta  | Solo se permiten las transiciones canónicas; cada cambio actualiza el historial | CP-04  | Especificado |
+| RF07  | Asignación de responsable y registro del cuaderno de trabajo | Alta  | Cada cambio registra usuario, fecha y comentario en historial\_incidencia | CP-04  | Especificado |
+| RF08  | Notificación al ciudadano cuando cambia el estado | Media  | El ciudadano recibe la notificación por correo o la ve en su sección de seguimiento | CP-04  | Especificado |
+| RF09  | Visualización geográfica con filtro por categoría y estado; mapa público limitado a incidencias pendientes sin datos personales | Media  | El visitante no autenticado ve únicamente ubicaciones de incidencias pendientes, sin datos personales | CP-06  | Especificado |
+| RF10  | Gestión de usuarios y roles (registro, login, roles, permisos) | Alta  | Un operador autenticado no accede a funciones de administración (RBAC) | CP-07  | Especificado |
+| RF11  | Reportes estadísticos por categoría, estado, barrio y período | Media  | Las agregaciones coinciden con los datos de prueba cargados | Previsto H2  | Especificado |
+| RF12  | Exportación de datos en CSV para análisis | Media  | El archivo exportado contiene las columnas y el subconjunto filtrado | Previsto H2  | Especificado |
+
+*Nota: RF04 no figura en la Tabla 7.3 del cuerpo del documento y se incorpora aquí para completar la serie RF01–RF12 de la sección 4.13.4; corresponde regularizarlo en la Tabla 7.3 en la próxima versión.* 
+
+**H.3.3 Requisitos de rendimiento** 
+
+**RNF01** Tiempo de respuesta de las páginas del panel menor o igual a 3 segundos con hasta 200 usuarios simultáneos. 
+**RNF02** Arquitectura de contenedores que permita replicar servicios (escalabilidad horizontal mediante Docker Compose). 
+
+**H.3.4 Restricciones de diseño** 
+
+Stack tecnológico obligatorio de la sección 4.12.2; arquitectura en tres capas de la sección 4.14.4; estructura de proyecto Laravel de la sección 4.15.2; conformidad con PSR-12, migraciones versionadas y *seeders* para datos de prueba (sección 4.15.5); mensajes de error en español. 
+
+**H.3.5 Atributos del sistema** 
+
+| Atributo  | Requisito  | Especificación |
+| :---- | ----- | :---- |
+| Seguridad (acceso)  | RNF03  | Autenticación por sesión con BCrypt, protección CSRF y control de acceso basado en roles |
+| Seguridad (red)  | RNF04  | El panel interno solo es accesible desde las VLAN internas; el servidor web se publica únicamente desde la DMZ en 80/443 |
+| Disponibilidad  | RNF05  | Respaldos diarios de la base de datos y levantamiento de servicios con Docker Compose |
+| Usabilidad  | RNF06  | Interfaz responsive y mapa legible en smartphone |
+| Portabilidad  | RNF07  | Compatibilidad con Chrome, Edge, Firefox y Safari en móvil |
+| Integridad  | RNF08  | Integridad referencial, índices espaciales y transaccionalidad |
+| Accesibilidad  | RNF09  | Contraste y etiquetas mínimas conforme a WCAG nivel A en formularios |
+
+**H.3.6 Otros requisitos** 
+
+**RNF10 Legal**: cumplimiento de la Ley 18.331 de protección de datos personales; el mapa público no expone datos personales del denunciante. 
+**Modelo de datos**: el modelo conceptual (entidades usuario, categoria, area, incidencia e historial\_incidencia) se describe en la sección 4.14.3 y el diccionario de datos en la sección 4.16.3 y el Anexo C. 
+
+**H.4 Matriz de trazabilidad** 
+
+| Requisito  | Caso de uso  | Caso de prueba  | Dimensión de la rúbrica |
+| ----- | ----- | ----- | :---- |
+| RF01–RF04  | CU-01 Reportar incidencia  | CP-01, CP-02  | III Programación · IV Base de Datos |
+| RF05–RF08  | CU-02 Gestionar incidencia  | CP-04  | III Programación |
+| RF02, RF09  | CU-03 Seguir mis reportes / Ver mapa público | CP-05, CP-06  | III Programación |
+| RF10  | CU-04 Autenticarse / Administrar usuarios | CP-07  | III Programación · VII Seguridad |
+| RF11, RF12  | CU-05 Generar reportes / Exportar datos | Previsto H2  | III Programación · IV Base de Datos |
+| RNF04  | —  | CP-08, CP-09  | VII Conectividad y Seguridad |
+
+*Los casos de uso CU-03 a CU-05 se enuncian en la sección 4.14.2 y se detallan, junto con el diagrama de casos de uso, en el Anexo B. Esta especificación se amplía y consolida en el Hito 2 con el prototipo funcional.* 
+
 **4.26 Hoja testigo** 
 
 **Proyecto:** MIRA — Mapa de Incidencias, Reportes y Atención (Bit Oriental, TC4) **Institución:** Instituto Tecnológico de Informática (ITI) 
@@ -1151,7 +1289,7 @@ Control de versiones del documento integrador: historial en portada y sección 4
 | :---- | :---: | :---- | :---- |
 | I. Gestión de Registro Documental | 14  | 4.8.3, 4.11.4, Anexo A, Control de versiones | En producción |
 | II. Gestión de Proyecto  | 14  | 4.7, 4.8, 4.9, 4.10, Tablas 7.1–7.2  | En producción |
-| III. Tutoría de Programación  | 14  | 4.14, 4.15, 4.22, Tabla 7.3 (RF), Tabla 7.4 (CP) | En producción (plan) |
+| III. Tutoría de Programación  | 14  | 4.14, 4.15, 4.22, Tabla 7.3 (RF), Tabla 7.4 (CP), Anexo H (ESRE IEEE 830) | En producción (plan) |
 | IV. Tutoría de Base de Datos  | 14  | 4.14.3, 4.16, Anexo C  | En producción |
 | V. Tutoría de POSIX  | 14  | 4.17, 4.21  | Diseño / Borrador |
 | VI. Tutoría de Redes MS  | 14  | 4.18, 4.21  | Diseño / Borrador |
