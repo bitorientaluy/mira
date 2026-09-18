@@ -3,7 +3,7 @@
 **Proyecto:** MIRA – Mapa de Incidencias, Reportes y Atención
 **Equipo:** Bit Oriental — Grupo TC4
 **Hito:** 1 — 18/09/2026
-**Referencia:** secciones 4.14.4 (Arquitectura), 4.17 (POSIX), 4.18 (Redes Microsoft), 4.19 (Conectividad) y 4.21 (Infraestructura y despliegue)
+**Referencia:** secciones 4.14.4 (Arquitectura), 4.17 (POSIX), 4.18 (Redes Microsoft), 4.19 (Conectividad), 4.21 (Infraestructura y despliegue) y Anexo H (ESRE IEEE 830, interfaces de comunicación H.3.1.4)
 
 ---
 
@@ -17,7 +17,8 @@ flowchart TB
     end
 
     subgraph PERIM["ZONA PERIMETRAL"]
-        ASA["Firewall Cisco ASA 5505<br/>WAN 200.10.10.2<br/>INSIDE 10.10.x.1 - DMZ 10.10.40.1<br/>NAT/PAT - ACL deny by default - VPN IPsec"]
+        RTR["Router de borde<br/>Enlace ISP 200.10.10.0/30<br/>Termina el tunel VPN IPsec"]
+        ASA["Firewall perimetral<br/>WAN 200.10.10.2<br/>INSIDE 10.10.x.1 - DMZ 10.10.40.1<br/>NAT/PAT - ACL deny by default"]
     end
 
     subgraph DMZ["DMZ — 10.10.40.0/24"]
@@ -26,8 +27,8 @@ flowchart TB
     end
 
     subgraph CORE["NUCLEO DE RED"]
-        SW3560["Switch Core Cisco 3560<br/>Inter-VLAN SVI - Trunk 802.1Q - RSTP"]
-        SW2960["Switches de acceso Cisco 2960<br/>VLAN 1 y VLAN 2"]
+        SWCORE["Switch core (capa 3)<br/>Enrutamiento inter-VLAN SVI<br/>Trunk 802.1Q - RSTP"]
+        SWACC["Switches de acceso (capa 2)<br/>VLAN 1 y VLAN 2"]
     end
 
     subgraph VLAN1["VLAN 1 — Administradores — 10.10.10.0/24"]
@@ -43,23 +44,25 @@ flowchart TB
         AD["<b>SRV-AD-DNS</b> — 10.10.30.13<br/>device: Windows Server 2022<br/>AD DS mira.local - DNS - DHCP - GPO<br/>Puertos 53, 88, 389, 445"]
     end
 
-    CIU -->|"HTTPS 443"| ASA
-    ADMREM -->|"Tunel IPsec<br/>AES-256 / DH-14"| ASA
+    CIU -->|"HTTPS 443"| RTR
+    ADMREM -->|"Tunel IPsec site-to-site<br/>IKEv2 - AES-256 / DH-14"| RTR
+    RTR --- ASA
     ASA -->|"DNAT 80/443 Permitir"| WEB
-    ASA -.->|"Internet hacia LAN: DENEGAR"| SW3560
+    ASA ==>|"VPN: solo hacia VLAN 1"| PCADM
     WEB -->|"HTTPS 443<br/>unica regla DMZ hacia INSIDE"| POSIX
+    PCADM -.->|"SSH 22"| BAST
 
-    ASA --- SW3560
-    SW3560 --- SW2960
-    SW2960 --- PCADM
-    SW2960 --- PCOP
-    SW3560 --- POSIX
-    SW3560 --- AD
+    ASA --- SWCORE
+    SWCORE --- SWACC
+    SWACC --- PCADM
+    SWACC --- PCOP
+    SWCORE --- POSIX
+    SWCORE --- AD
 
     PCOP -->|"443 panel interno"| POSIX
     PCOP -->|"DNS 53 - LDAP 389 - DHCP 67"| AD
-    PCADM -->|"22, 3389, 5432, 5985<br/>administracion"| POSIX
-    PCADM -->|"53, 88, 389, 445, 3389"| AD
+    PCADM -->|"SSH 22 - PostgreSQL 5432<br/>administracion"| POSIX
+    PCADM -->|"53, 88, 389, 445<br/>RDP 3389 - WinRM 5985"| AD
     POSIX <-->|"Resolucion DNS mira.local"| AD
 
     classDef dmz fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
@@ -71,8 +74,10 @@ flowchart TB
     class POSIX,AD srv
     class PCADM adm
     class PCOP usr
-    class ASA fw
+    class ASA,RTR fw
 ```
+
+> **Nota sobre las políticas del firewall:** el firewall perimetral aplica *deny by default*. Todo tráfico de Internet hacia las VLAN internas (1, 2 y 3) está denegado, así como el tráfico de la DMZ hacia INSIDE salvo la única regla `SRV-WEB-MIRA → SRV-POSIX 443` que muestra el diagrama. Las reglas denegadas no se dibujan como flechas porque representan tráfico que no existe (ver la tabla completa en 4.19.4).
 
 ---
 
@@ -138,7 +143,7 @@ flowchart LR
 sequenceDiagram
     autonumber
     participant CIU as Ciudadano
-    participant FW as ASA 5505
+    participant FW as Firewall perimetral
     participant WEB as SRV-WEB-MIRA (DMZ)
     participant APP as App Laravel (SRV-POSIX)
     participant DB as PostgreSQL/PostGIS
@@ -147,15 +152,17 @@ sequenceDiagram
     CIU->>FW: HTTPS 443 hacia srv-web-mira
     FW->>WEB: DNAT 443 (regla de publicacion)
     WEB->>APP: Proxy HTTPS 443 (DMZ hacia VLAN 3)
-    CIU->>APP: Formulario + ubicacion en mapa + foto
-    CIU->>APP: Selecciona categoria (define el area responsable)
+    APP-->>CIU: Formulario de reporte con mapa
+    CIU->>WEB: Descripcion + ubicacion + foto + categoria
+    WEB->>APP: Proxy del envio del formulario
     APP->>DB: INSERT incidencia (geometry, indice GIST)
     DB-->>APP: Codigo unico de seguimiento
-    APP-->>CIU: Incidencia registrada
-    OP->>APP: HTTPS 443 al panel interno (VLAN 2 hacia VLAN 3)
+    APP-->>CIU: Incidencia registrada (via WEB)
+    Note over CIU,WEB: Todo el trafico del ciudadano<br/>atraviesa la DMZ
+    OP->>APP: HTTPS 443 al panel interno (VLAN 2 hacia VLAN 3, sin pasar por la DMZ)
     APP->>DB: Cambio de estado + historial
     Note over OP,DB: Pendiente - En proceso - Resuelto
-    CIU->>APP: Consulta de seguimiento
+    CIU->>WEB: Consulta de seguimiento
 ```
 
 ---
@@ -167,10 +174,11 @@ sequenceDiagram
 | SRV-WEB-MIRA | Servidor web | DMZ | 10.10.40.10 | Nginx (proxy reverso + TLS) | 80/443 externa |
 | SRV-POSIX | Ubuntu Server 24.04 LTS | VLAN 3 | 10.10.30.14 | Docker: app Laravel 13, Nginx, PostgreSQL 16 + PostGIS | 443 interno · 5432 local |
 | SRV-AD-DNS | Windows Server 2022 | VLAN 3 | 10.10.30.13 | AD DS (mira.local), DNS, DHCP, GPO | 53, 88, 389, 445 |
-| Bastión | Host de salto | DMZ | 10.10.40.20 | Acceso administrado | 22 |
-| Firewall ASA 5505 | Cisco (licencia Security Plus) | Perimetral | 200.10.10.2 / 10.10.40.1 | ACL, NAT/PAT, VPN IPsec | — |
-| Switch Core 3560 | Cisco | Núcleo | — | Inter-VLAN (SVI), trunk 802.1Q, RSTP | — |
-| Switches 2960 | Cisco | Acceso | — | Acceso VLAN 1 y 2 | — |
+| Bastión | Host de salto | DMZ | 10.10.40.20 | Acceso administrado desde VLAN 1 | 22 |
+| Router de borde | Router perimetral | Perimetral | Enlace ISP 200.10.10.0/30 | Enrutamiento WAN, terminación VPN IPsec | — |
+| Firewall perimetral | Capa 3 con zonas de seguridad | Perimetral | 200.10.10.2 / 10.10.40.1 | ACL, NAT/PAT | — |
+| Switch core | Switch multicapa (capa 3) | Núcleo | — | Inter-VLAN (SVI), trunk 802.1Q, RSTP | — |
+| Switches de acceso | Switch de capa 2 | Acceso | — | Acceso VLAN 1 y 2 | — |
 | PC Operador | Cliente | VLAN 2 | DHCP 10.10.20.10–254 | Navegador | 443 |
 | PC Administración | Cliente TI | VLAN 1 | DHCP 10.10.10.10–254 | SSH, RDP, monitoreo SNMP | 22, 3389 |
 
