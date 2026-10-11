@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIRA · Mapa de Incidencias, Reportes y Atención</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <style>
+    :root {
+      --verde: #1F6B52;
+      --verde-oscuro: #134434;
+      --tinta: #1D2422;
+      --gris: #5E6865;
+      --fondo: #F5F7F6;
+      --borde: #D5DCD9;
+      --alerta: #C2410C;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--tinta);
+      background: var(--fondo);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--verde-oscuro);
+      color: #fff;
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .marca { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.04em; }
+    .marca small { font-size: 0.8rem; font-weight: 400; opacity: 0.8; margin-left: 0.5rem; letter-spacing: 0; }
+    nav a { color: #fff; text-decoration: none; margin-left: 1rem; }
+    nav a:hover, nav a:focus-visible { text-decoration: underline; }
+    #mapa { height: 55vh; min-height: 320px; }
+    main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; display: grid; gap: 2rem; }
+    h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.75rem; }
+    p.ayuda { color: var(--gris); margin: 0 0 1rem; }
+    section { background: #fff; border: 1px solid var(--borde); border-radius: 8px; padding: 1.25rem; }
+    label { display: block; font-weight: 600; margin: 0.75rem 0 0.25rem; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea {
+      width: 100%; padding: 0.6rem; border: 1px solid var(--borde); border-radius: 6px; background: #fff;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    button {
+      margin-top: 1rem; padding: 0.65rem 1.2rem; border: 0; border-radius: 6px;
+      background: var(--verde); color: #fff; font-weight: 600; cursor: pointer;
+    }
+    button:hover { background: var(--verde-oscuro); }
+    :focus-visible { outline: 3px solid #F2B705; outline-offset: 2px; }
+    .ubicacion { font-size: 0.9rem; color: var(--gris); }
+    .mensaje { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; display: none; }
+    .ok { display: block; background: #E3F2EC; color: var(--verde-oscuro); }
+    .error { display: block; background: #FCEBE2; color: var(--alerta); }
+    .leyenda { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.9rem; color: var(--gris); }
+    .punto { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.35rem; }
+    footer { text-align: center; color: var(--gris); font-size: 0.85rem; padding: 1.5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="marca">MIRA <small>Mapa de Incidencias, Reportes y Atención</small></div>
+    <nav>
+      <a href="#reportar">Reportar</a>
+      <a href="#seguimiento">Seguir mi reporte</a>
+    </nav>
+  </header>
+
+  <div id="mapa" role="region" aria-label="Mapa de incidencias pendientes en Montevideo"></div>
+
+  <main>
+    <div>
+      <h1>Incidencias de limpieza en Montevideo</h1>
+      <p class="ayuda">El mapa muestra las incidencias pendientes. Hacé clic en el mapa para marcar dónde está el problema que querés reportar.</p>
+      <div class="leyenda">
+        <span><span class="punto" style="background:#C2410C"></span>Pendiente</span>
+        <span><span class="punto" style="background:#D69E00"></span>En proceso</span>
+      </div>
+    </div>
+
+    <section id="reportar">
+      <h2>Reportar una incidencia</h2>
+      <form id="form-reporte" novalidate>
+        <label for="categoria">Categoría</label>
+        <select id="categoria" required>
+          <option value="">Elegí una categoría</option>
+          <option>Contenedor desbordado</option>
+          <option>Residuos fuera del contenedor</option>
+          <option>Acumulación de basura</option>
+          <option>Contenedor fuera de lugar</option>
+          <option>Ramas o malezas</option>
+        </select>
+
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion" placeholder="Ej.: el contenedor de la esquina está lleno desde hace tres días"></textarea>
+
+        <label for="foto">Foto (opcional, hasta 5 MB)</label>
+        <input id="foto" type="file" accept="image/*">
+
+        <p class="ubicacion" id="ubicacion">Ubicación: todavía no marcaste un punto en el mapa.</p>
+
+        <button type="submit">Enviar reporte</button>
+        <div class="mensaje" id="msg-reporte" role="status"></div>
+      </form>
+    </section>
+
+    <section id="seguimiento">
+      <h2>Seguir mi reporte</h2>
+      <form id="form-seguimiento">
+        <label for="codigo">Código de seguimiento</label>
+        <input id="codigo" placeholder="MIR-2026-000123">
+        <button type="submit">Consultar estado</button>
+        <div class="mensaje" id="msg-seguimiento" role="status"></div>
+      </form>
+    </section>
+  </main>
+
+  <footer>MIRA · Proyecto académico del grupo Bit Oriental · ITI, Tecnicatura en Redes y Software 2026</footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script>
+    // Mapa centrado en Montevideo
+    const mapa = L.map('mapa').setView([-34.9011, -56.1645], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; colaboradores de OpenStreetMap'
+    }).addTo(mapa);
+
+    // Datos de ejemplo (en la versión real vienen de /api/incidencias.geojson)
+    const ejemplos = [
+      { lat: -34.9058, lng: -56.1913, cat: 'Contenedor desbordado', estado: 'Pendiente' },
+      { lat: -34.8941, lng: -56.1530, cat: 'Residuos fuera del contenedor', estado: 'En proceso' },
+      { lat: -34.9127, lng: -56.1617, cat: 'Acumulación de basura', estado: 'Pendiente' },
+      { lat: -34.8869, lng: -56.1801, cat: 'Ramas o malezas', estado: 'Pendiente' }
+    ];
+    const colores = { 'Pendiente': '#C2410C', 'En proceso': '#D69E00' };
+    ejemplos.forEach(i => {
+      L.circleMarker([i.lat, i.lng], {
+        radius: 9, color: '#fff', weight: 2, fillColor: colores[i.estado], fillOpacity: 0.95
+      }).addTo(mapa).bindPopup(`<strong>${i.cat}</strong><br>Estado: ${i.estado}`);
+    });
+
+    // Marcar ubicación del nuevo reporte
+    let marcador = null;
+    let ubicacion = null;
+    mapa.on('click', e => {
+      ubicacion = e.latlng;
+      if (marcador) marcador.setLatLng(ubicacion);
+      else marcador = L.marker(ubicacion).addTo(mapa);
+      document.getElementById('ubicacion').textContent =
+        `Ubicación: ${ubicacion.lat.toFixed(5)}, ${ubicacion.lng.toFixed(5)}`;
+    });
+
+    function mostrar(id, texto, tipo) {
+      const el = document.getElementById(id);
+      el.className = 'mensaje ' + tipo;
+      el.textContent = texto;
+    }
+
+    // Envío del reporte (demo: no hay backend todavía)
+    document.getElementById('form-reporte').addEventListener('submit', e => {
+      e.preventDefault();
+      const categoria = document.getElementById('categoria').value;
+      const foto = document.getElementById('foto').files[0];
+      if (!categoria) return mostrar('msg-reporte', 'Elegí una categoría para la incidencia.', 'error');
+      if (!ubicacion) return mostrar('msg-reporte', 'Marcá en el mapa dónde está la incidencia.', 'error');
+      if (foto && foto.size > 5 * 1024 * 1024) return mostrar('msg-reporte', 'La foto supera los 5 MB. Elegí una imagen más liviana.', 'error');
+      const codigo = 'MIR-2026-' + String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+      mostrar('msg-reporte', `Incidencia registrada. Tu código de seguimiento es ${codigo}. Estado: Pendiente.`, 'ok');
+      e.target.reset();
+    });
+
+    // Consulta de seguimiento (demo)
+    document.getElementById('form-seguimiento').addEventListener('submit', e => {
+      e.preventDefault();
+      const codigo = document.getElementById('codigo').value.trim().toUpperCase();
+      if (!/^MIR-\d{4}-\d{6}$/.test(codigo)) {
+        return mostrar('msg-seguimiento', 'El código tiene el formato MIR-2026-000123. Revisalo e intentá de nuevo.', 'error');
+      }
+      mostrar('msg-seguimiento', `${codigo}: En proceso. Un operador ya tomó tu reporte.`, 'ok');
+    });
+  </script>
+</body>
+</html>
