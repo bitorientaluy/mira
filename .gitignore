@@ -1,0 +1,45 @@
+# --- Secretos ---
+# Variables de Compose (raíz) y de Laravel (src/)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Laravel (por si falta src/.gitignore) ---
+/src/vendor/
+/src/node_modules/
+/src/public/build/
+/src/public/hot
+/src/public/storage
+/src/storage/*.key
+/src/storage/logs/*
+/src/storage/framework/cache/*
+/src/storage/framework/sessions/*
+/src/storage/framework/views/*
+/src/storage/app/private/*
+/src/storage/app/public/*
+!/src/storage/**/.gitignore
+/src/bootstrap/cache/*.php
+/src/.phpunit.result.cache
+/src/.phpunit.cache/
+
+# --- Datos y respaldos (nunca al repo) ---
+# El script versionado database/mira.sql sí se sube: no ignorar *.sql en general
+/backups/
+*.dump
+*.sql.gz
+
+# --- Entornos y herramientas ---
+venv/
+.venv/
+__pycache__/
+*.log
+
+# --- Editores y sistema operativo ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
