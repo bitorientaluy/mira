@@ -15,9 +15,23 @@ class Rol extends Model
     const EJECUTOR = 'ejecutor';
     const ADMIN = 'admin';
 
+    // Nombre para mostrar en pantalla
+    const ETIQUETAS = [
+        self::CIUDADANO => 'Ciudadano',
+        self::OPERADOR => 'Operador',
+        self::JEFE_AREA => 'Jefe de área',
+        self::EJECUTOR => 'Ejecutor',
+        self::ADMIN => 'Administrador',
+    ];
+
     protected $table = 'rol';
 
     public $timestamps = false;
+
+    public function etiqueta(): string
+    {
+        return self::ETIQUETAS[$this->nombre] ?? $this->nombre;
+    }
 
     public function usuarios(): HasMany
     {
