@@ -66,6 +66,23 @@ docker compose exec app php artisan <comando>
 docker compose down              # apaga; los datos de MySQL quedan en el volumen dbdata
 ```
 
+### Pruebas
+
+PHPUnit sobre una base MySQL separada, `<DB_DATABASE>_test` (por ejemplo `mira_test`), para no borrar los datos de desarrollo. Se usa MySQL y no SQLite porque las migraciones tienen tipos espaciales y CHECK.
+
+```bash
+docker compose exec app php artisan test
+docker compose exec app php artisan test --filter=LoginTest   # una clase
+```
+
+La base de pruebas la crea `docker/mysql/init/01-base-de-pruebas.sh` cuando MySQL inicializa un volumen vacío. En un volumen que ya existía, crearla una vez a mano:
+
+```bash
+docker compose exec -T db sh < docker/mysql/init/01-base-de-pruebas.sh
+```
+
+Los nombres de las pruebas llevan el ID del plan de pruebas (`test_cp15_...`, PU-XX en el docblock).
+
 ### Errores comunes
 
 - **"port is already allocated"**: cambiar `APP_PORT` en `.env`. Para ver quién usa el puerto: `netstat -ano | findstr :8080`.

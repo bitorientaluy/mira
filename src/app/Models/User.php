@@ -11,9 +11,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-// rol_id queda fuera de Fillable: nadie puede asignarse un rol desde un formulario
-#[Fillable(['nombre', 'email', 'password', 'telefono'])]
-#[Hidden(['password', 'remember_token'])]
+// rol_id queda fuera de Fillable: nadie puede asignarse un rol desde un formulario.
+// La cédula se oculta al serializar (JSON, API) por ser un dato personal.
+#[Fillable(['nombre', 'email', 'cedula', 'password', 'telefono'])]
+#[Hidden(['cedula', 'password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -46,5 +47,13 @@ class User extends Authenticatable
     public function esRol(string $nombre): bool
     {
         return $this->rol?->nombre === $nombre;
+    }
+
+    /**
+     * Nombre de la ruta a la que va el usuario al iniciar sesión.
+     */
+    public function rutaInicio(): string
+    {
+        return $this->esRol(Rol::CIUDADANO) ? 'ciudadano.inicio' : 'panel.inicio';
     }
 }
