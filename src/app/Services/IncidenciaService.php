@@ -6,7 +6,9 @@ use App\Enums\EstadoIncidencia;
 use App\Models\Categoria;
 use App\Models\Incidencia;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Toda la lógica de las incidencias pasa por acá (creación, cambios de estado e historial),
@@ -14,42 +16,56 @@ use Illuminate\Support\Facades\DB;
  */
 class IncidenciaService
 {
+    public function __construct(private FotoService $fotos) {}
+
     /**
-     * Crea una incidencia en estado Pendiente y registra la primera fila del historial.
+     * Crea una incidencia en estado Pendiente, guarda la foto (si hay) y registra la primera fila del historial.
      *
      * @param  array{categoria_id: int|string, descripcion: string, lat: float|string, lng: float|string, direccion?: string|null}  $datos  datos ya validados
      */
-    public function crear(array $datos, User $ciudadano): Incidencia
+    public function crear(array $datos, User $ciudadano, ?UploadedFile $foto = null): Incidencia
     {
-        return DB::transaction(function () use ($datos, $ciudadano) {
-            $categoria = Categoria::findOrFail($datos['categoria_id']);
-            $punto = self::punto((float) $datos['lat'], (float) $datos['lng']);
+        $rutaFoto = null;
 
-            $incidencia = new Incidencia([
-                'descripcion' => trim($datos['descripcion']),
-                'direccion' => $datos['direccion'] ?? null,
-            ]);
-            $incidencia->ciudadano_id = $ciudadano->id;
-            $incidencia->categoria_id = $categoria->id;
-            $incidencia->area_id = $categoria->area_id; // el operador la confirma al validar
-            $incidencia->barrio_id = $this->barrioDe($punto);
-            $incidencia->estado = EstadoIncidencia::Pendiente;
-            $incidencia->ubicacion = DB::raw("ST_GeomFromText('{$punto}', 4326, 'axis-order=long-lat')");
-            $incidencia->save();
+        try {
+            return DB::transaction(function () use ($datos, $ciudadano, $foto, &$rutaFoto) {
+                $categoria = Categoria::findOrFail($datos['categoria_id']);
+                $punto = self::punto((float) $datos['lat'], (float) $datos['lng']);
 
-            // El código depende del id, que recién se conoce después del insert
-            $incidencia->codigo = self::codigo($incidencia->id, (int) now()->format('Y'));
-            $incidencia->save();
+                $incidencia = new Incidencia([
+                    'descripcion' => trim($datos['descripcion']),
+                    'direccion' => $datos['direccion'] ?? null,
+                ]);
+                $incidencia->ciudadano_id = $ciudadano->id;
+                $incidencia->categoria_id = $categoria->id;
+                $incidencia->area_id = $categoria->area_id; // el operador la confirma al validar
+                $incidencia->barrio_id = $this->barrioDe($punto);
+                $incidencia->estado = EstadoIncidencia::Pendiente;
+                $incidencia->ubicacion = DB::raw("ST_GeomFromText('{$punto}', 4326, 'axis-order=long-lat')");
+                $incidencia->save();
 
-            $incidencia->historial()->create([
-                'usuario_id' => $ciudadano->id,
-                'estado_anterior' => null,
-                'estado_nuevo' => EstadoIncidencia::Pendiente,
-                'comentario' => 'Reporte creado por el ciudadano.',
-            ]);
+                // El código depende del id, que recién se conoce después del insert
+                $incidencia->codigo = self::codigo($incidencia->id, (int) now()->format('Y'));
+                if ($foto !== null) {
+                    $rutaFoto = $this->fotos->guardar($foto, $incidencia->codigo);
+                    $incidencia->foto_ruta = $rutaFoto;
+                }
+                $incidencia->save();
 
-            return $incidencia->refresh();
-        });
+                $incidencia->historial()->create([
+                    'usuario_id' => $ciudadano->id,
+                    'estado_anterior' => null,
+                    'estado_nuevo' => EstadoIncidencia::Pendiente,
+                    'comentario' => 'Reporte creado por el ciudadano.',
+                ]);
+
+                return $incidencia->refresh();
+            });
+        } catch (Throwable $e) {
+            // Si la base deshizo el alta, que no quede una foto huérfana en el disco
+            $this->fotos->borrar($rutaFoto);
+            throw $e;
+        }
     }
 
     /**
