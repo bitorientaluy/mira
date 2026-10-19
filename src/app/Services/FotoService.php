@@ -39,7 +39,10 @@ class FotoService
         imagedestroy($imagen);
 
         $ruta = "incidencias/{$nombre}.jpg";
-        Storage::disk(self::DISCO)->put($ruta, $jpeg);
+        // put() devuelve false en vez de fallar (por ejemplo, sin permiso de escritura): no seguir con una ruta rota
+        if (! Storage::disk(self::DISCO)->put($ruta, $jpeg)) {
+            throw new RuntimeException("No se pudo guardar la foto en {$ruta}.");
+        }
 
         return $ruta;
     }

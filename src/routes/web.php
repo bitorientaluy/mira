@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistroController;
+use App\Http\Controllers\IncidenciaController;
 use App\Models\Rol;
 use Illuminate\Support\Facades\Route;
 
@@ -23,8 +24,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::middleware('rol:'.Rol::CIUDADANO)->group(function () {
-        // Provisorio: lo reemplaza el reporte en el mapa (T-111)
         Route::view('/inicio', 'ciudadano.inicio')->name('ciudadano.inicio');
+
+        Route::get('/reportar', [IncidenciaController::class, 'create'])->name('incidencias.create');
+        Route::post('/incidencias', [IncidenciaController::class, 'store'])->name('incidencias.store');
+        Route::get('/incidencias/{incidencia}/confirmacion', [IncidenciaController::class, 'confirmacion'])
+            ->name('incidencias.confirmacion');
     });
 
     Route::middleware('rol:'.implode(',', [Rol::OPERADOR, Rol::JEFE_AREA, Rol::EJECUTOR, Rol::ADMIN]))->group(function () {

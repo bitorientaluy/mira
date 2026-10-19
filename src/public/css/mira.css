@@ -340,6 +340,110 @@ textarea.entrada { height: 7.5rem; padding: 0.875rem 1rem; resize: vertical; }
     background: var(--borde);
 }
 
+/* ─── Pantalla "Nuevo reporte" (T-111) ────────────────────────── */
+.etiqueta { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; letter-spacing: 0.01em; }
+fieldset.campo { margin: 0; padding: 0; border: 0; min-width: 0; }
+fieldset.campo legend { padding: 0; margin-bottom: 0.375rem; }
+
+.pantalla-mapa {
+    position: relative;
+    height: calc(100vh - var(--alto-barra));
+    height: calc(100dvh - var(--alto-barra));
+    overflow: hidden;
+}
+.reporte { height: 100%; }
+.mapa { position: absolute; inset: 0; z-index: 0; background: #e9edff; }
+
+.aviso-mapa {
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: calc(100% - 6rem);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--texto);
+    background: var(--superficie);
+    border-radius: var(--radio-pildora);
+    box-shadow: var(--sombra-2);
+}
+.aviso-mapa .icono { font-size: 1.25rem; color: var(--secundario); }
+.aviso-error .icono { color: var(--error); }
+
+.fab-mapa { position: absolute; right: var(--margen); bottom: calc(62% + 1rem); z-index: 10; }
+
+.hoja-reporte {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    max-height: 62%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ubicacion {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3.25rem;
+    padding: 0 1rem;
+    border-radius: var(--radio);
+    background: var(--sutil);
+    border: 1.5px solid var(--borde);
+    color: var(--texto-suave);
+}
+.ubicacion .icono { color: var(--terciario); }
+.ubicacion-lista { color: var(--exito); background: var(--exito-fondo); border-color: transparent; }
+.ubicacion-lista .icono { color: var(--exito); }
+
+/* Las categorías son radios dentro de chips: el foco y la selección se ven en el chip */
+.chip:has(input:checked) { background: var(--primario); border-color: var(--primario); color: #fff; }
+.chip:has(input:focus-visible) { outline: 3px solid var(--secundario); outline-offset: 2px; }
+
+.vista-foto { width: 100%; max-height: 12rem; object-fit: cover; border-radius: var(--radio); border: 1px solid var(--borde); }
+
+.pin-incidencia {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: #fff;
+    background: var(--secundario);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: var(--sombra-2);
+}
+.pin-incidencia .icono { transform: rotate(45deg); font-size: 1.375rem; }
+
+/* Confirmación */
+.icono-exito { color: var(--exito) !important; }
+.codigo-reporte {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--primario);
+    padding: 0.75rem 1.25rem;
+    background: var(--sutil);
+    border: 1px dashed var(--borde);
+    border-radius: var(--radio);
+}
+.datos-reporte { width: 100%; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; text-align: left; }
+.datos-reporte div { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.875rem; }
+.datos-reporte dt { color: var(--texto-suave); }
+.datos-reporte dd { margin: 0; font-weight: 600; text-align: right; }
+.estado-vacio .acciones { width: 100%; }
+
 /* ─── Pantallas grandes ────────────────────────────────────────── */
 @media (min-width: 640px) {
     :root { --margen: 1.5rem; }
@@ -353,4 +457,20 @@ textarea.entrada { height: 7.5rem; padding: 0.875rem 1rem; resize: vertical; }
 
 @media (min-width: 1024px) {
     .contenedor { padding-top: 2.5rem; }
+
+    /* En escritorio el formulario pasa a un panel lateral y el mapa ocupa el resto */
+    .hoja-reporte {
+        top: 1rem;
+        bottom: 1rem;
+        left: 1rem;
+        right: auto;
+        width: 26rem;
+        max-height: none;
+        border-radius: var(--radio-lg);
+        box-shadow: var(--sombra-2);
+        padding: 1.5rem;
+    }
+    .hoja-reporte .hoja-asa { display: none; }
+    .fab-mapa { bottom: 2rem; }
+    .aviso-mapa { left: calc(50% + 13.5rem); }
 }

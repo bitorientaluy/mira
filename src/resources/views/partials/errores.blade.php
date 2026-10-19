@@ -4,7 +4,8 @@
         <div>
             <strong>Revisá los datos</strong>
             <ul>
-                @foreach ($errors->all() as $error)
+                {{-- Sin repetidos: lat y lng comparten el mismo mensaje --}}
+                @foreach (array_unique($errors->all()) as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
