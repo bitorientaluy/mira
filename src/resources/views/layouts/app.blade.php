@@ -41,8 +41,11 @@
         @endauth
     </header>
 
-    <main class="contenedor">
-        @include('partials.errores')
+    {{-- Las pantallas a pantalla completa (mapa) cambian la clase y muestran los errores donde les conviene --}}
+    <main class="@yield('clase_main', 'contenedor')">
+        @sectionMissing('errores_propios')
+            @include('partials.errores')
+        @endif
         @yield('contenido')
     </main>
 

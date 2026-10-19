@@ -9,18 +9,18 @@
         <p class="texto-suave">Desde acá vas a poder reportar incidencias y seguir tus reportes.</p>
     </div>
 
-    {{-- Provisorio: las acciones se habilitan con T-111 (reporte) y T-214 (mis reportes) --}}
     <section class="tarjeta">
         <h2>¿Viste un problema de limpieza en la calle?</h2>
         <p class="texto-suave">Marcá el lugar en el mapa, elegí la categoría y, si querés, sumá una foto.</p>
         <div class="acciones">
-            <button type="button" class="boton boton-primario" disabled>
+            <a class="boton boton-primario" href="{{ route('incidencias.create') }}">
                 <span class="icono" aria-hidden="true">add_location_alt</span> Reportar incidencia
-            </button>
+            </a>
+            {{-- Se habilita con T-214 --}}
             <button type="button" class="boton boton-secundario" disabled>
                 <span class="icono" aria-hidden="true">list_alt</span> Mis reportes
             </button>
         </div>
-        <span class="insignia insignia-punto">Disponible próximamente</span>
+        <span class="insignia insignia-punto">"Mis reportes" disponible próximamente</span>
     </section>
 @endsection
