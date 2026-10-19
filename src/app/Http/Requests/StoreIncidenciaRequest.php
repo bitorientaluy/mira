@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreIncidenciaRequest extends FormRequest
 {
@@ -27,6 +28,26 @@ class StoreIncidenciaRequest extends FormRequest
             // Valida el contenido real del archivo, no solo la extensión (CP-14)
             'foto' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
         ];
+    }
+
+    /**
+     * Además del tipo de archivo, la foto tiene que poder abrirse: así un archivo disfrazado o una imagen
+     * corrupta dan un error de validación y no un 500 al procesarla (CP-14).
+     *
+     * @return array<int, \Closure>
+     */
+    public function after(): array
+    {
+        return [function (Validator $validador) {
+            $foto = $this->file('foto');
+            if ($foto === null || $validador->errors()->has('foto')) {
+                return;
+            }
+            $imagen = @imagecreatefromstring((string) file_get_contents($foto->getRealPath()));
+            if ($imagen === false) {
+                $validador->errors()->add('foto', 'La foto no es una imagen válida.');
+            }
+        }];
     }
 
     /**
