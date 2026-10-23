@@ -83,6 +83,17 @@ docker compose exec -T db sh < docker/mysql/init/01-base-de-pruebas.sh
 
 Los nombres de las pruebas llevan el ID del plan de pruebas (`test_cp15_...`, PU-XX en el docblock).
 
+### Script SQL
+
+`src/database/sql/esquema.sql` (las 10 tablas del dominio) y `datos_prueba.sql` (roles, área, categorías y usuarios demo) se generan con `mysqldump` a partir de las migraciones y los seeders, que siguen siendo la fuente. Sirven para crear la base sin Laravel:
+
+```bash
+docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < src/database/sql/esquema.sql
+docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < src/database/sql/datos_prueba.sql
+```
+
+`esquema.sql` borra y recrea las tablas: no correrlo sobre una base con datos que se quieran conservar.
+
 ### Errores comunes
 
 - **"port is already allocated"**: cambiar `APP_PORT` en `.env`. Para ver quién usa el puerto: `netstat -ano | findstr :8080`.
