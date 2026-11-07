@@ -5,6 +5,8 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Guarda las fotos de las incidencias sin metadatos (Programación 4.i, CP-12 y CP-14).
@@ -45,6 +47,22 @@ class FotoService
         }
 
         return $ruta;
+    }
+
+    /**
+     * Respuesta HTTP con la foto, para mostrarla a quien ya pasó el control de acceso de la ruta.
+     * El archivo nunca queda en public/: siempre se sirve a través de este método.
+     */
+    public function respuesta(?string $ruta): StreamedResponse
+    {
+        if ($ruta === null || ! Storage::disk(self::DISCO)->exists($ruta)) {
+            throw new NotFoundHttpException('La incidencia no tiene foto.');
+        }
+
+        return Storage::disk(self::DISCO)->response($ruta, null, [
+            'Cache-Control' => 'private, max-age=3600', // que no la guarde un proxy compartido
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function borrar(?string $ruta): void

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistroController;
 use App\Http\Controllers\IncidenciaController;
+use App\Http\Controllers\Panel\IncidenciaController as PanelIncidenciaController;
 use App\Models\Rol;
 use Illuminate\Support\Facades\Route;
 
@@ -33,7 +34,15 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('rol:'.implode(',', [Rol::OPERADOR, Rol::JEFE_AREA, Rol::EJECUTOR, Rol::ADMIN]))->group(function () {
-        // Provisorio: lo reemplaza el panel de operador (T-116)
-        Route::view('/panel', 'panel.inicio')->name('panel.inicio');
+        Route::get('/panel', [PanelIncidenciaController::class, 'index'])->name('panel.inicio');
+        Route::get('/panel/incidencias/{incidencia}', [PanelIncidenciaController::class, 'show'])
+            ->whereNumber('incidencia')->name('panel.incidencias.show');
+        Route::get('/panel/incidencias/{incidencia}/foto', [PanelIncidenciaController::class, 'foto'])
+            ->name('panel.incidencias.foto');
+
+        // Cambiar el estado: solo operador y admin (jefe de área y ejecutor quedan para la siguiente etapa)
+        Route::patch('/panel/incidencias/{incidencia}/estado', [PanelIncidenciaController::class, 'cambiarEstado'])
+            ->middleware('rol:'.implode(',', [Rol::OPERADOR, Rol::ADMIN]))
+            ->name('panel.incidencias.estado');
     });
 });
