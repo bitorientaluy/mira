@@ -100,6 +100,20 @@ class CambioEstadoServiceTest extends TestCase
         $this->assertNull($reabierta->resuelto_en);
     }
 
+    public function test_se_puede_volver_un_paso_atras_y_queda_en_el_historial(): void
+    {
+        $this->cambiar(EstadoIncidencia::Validada);
+        $this->cambiar(EstadoIncidencia::EnProceso);
+
+        $devuelta = $this->cambiar(EstadoIncidencia::Validada, 'Se asignó por error');
+
+        $this->assertSame(EstadoIncidencia::Validada, $devuelta->estado);
+        $ultimo = $devuelta->historial->last();
+        $this->assertSame(EstadoIncidencia::EnProceso, $ultimo->estado_anterior);
+        $this->assertSame(EstadoIncidencia::Validada, $ultimo->estado_nuevo);
+        $this->assertSame('Se asignó por error', $ultimo->comentario);
+    }
+
     public function test_descartar_exige_motivo_y_lo_guarda(): void
     {
         try {

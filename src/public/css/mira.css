@@ -460,6 +460,7 @@ a.chip { text-decoration: none; }
 
 .chip-numero { font-weight: 500; opacity: 0.75; }
 .chips-envolver { flex-wrap: wrap; overflow: visible; }
+.acciones-estado { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .lista-incidencias { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 .fila-incidencia {

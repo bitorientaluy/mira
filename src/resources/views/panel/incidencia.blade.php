@@ -70,41 +70,36 @@
         <div class="detalle-lateral">
             @if ($puedeCambiar && count($opciones) > 0)
                 <section class="tarjeta">
-                    <h2>Cambiar estado</h2>
+                    <h2>Acciones</h2>
                     @include('partials.errores')
 
                     <form class="formulario" method="POST" action="{{ route('panel.incidencias.estado', $incidencia) }}">
                         @csrf
                         @method('PATCH')
 
-                        <fieldset class="campo">
-                            <legend class="etiqueta">Estado nuevo</legend>
-                            @php
-                                // Tras un error se conserva la elección si sigue siendo válida; si hay una sola opción, va marcada
-                                $valores = array_column($opciones, 'value');
-                                $elegido = in_array(old('estado'), $valores, true) ? old('estado') : (count($valores) === 1 ? $valores[0] : null);
-                            @endphp
-                            <div class="chips chips-envolver">
-                                @foreach ($opciones as $opcion)
-                                    <label class="chip">
-                                        <input class="solo-lectores" type="radio" name="estado" value="{{ $opcion->value }}"
-                                               @checked($elegido === $opcion->value) required>
-                                        {{ $opcion === \App\Enums\EstadoIncidencia::Pendiente ? 'Reabrir (Pendiente)' : $opcion->value }}
-                                    </label>
-                                @endforeach
-                            </div>
-                        </fieldset>
-
                         <div class="campo">
                             <label for="comentario">Comentario <span class="texto-suave">(opcional)</span></label>
                             <textarea id="comentario" name="comentario" class="entrada @error('comentario') entrada-invalida @enderror"
                                       maxlength="500" placeholder="Ej.: se coordinó la cuadrilla para mañana">{{ old('comentario') }}</textarea>
-                            <span class="campo-ayuda">Queda en el historial de la incidencia.</span>
+                            <span class="campo-ayuda">Queda en el historial junto con el cambio.</span>
                         </div>
 
-                        <button type="submit" class="boton boton-primario boton-bloque">
-                            <span class="icono" aria-hidden="true">sync_alt</span> Guardar cambio
-                        </button>
+                        {{-- Cada transición permitida es un botón: primero las que avanzan, después volver atrás o reabrir --}}
+                        @php
+                            $actual = $incidencia->estado;
+                            $iconos = ['Validada' => 'verified', 'En proceso' => 'engineering', 'Resuelto' => 'task_alt'];
+                            usort($opciones, fn ($a, $b) => $actual->avanzaA($b) <=> $actual->avanzaA($a));
+                        @endphp
+                        <div class="acciones-estado">
+                            @foreach ($opciones as $opcion)
+                                @php $avanza = $actual->avanzaA($opcion); @endphp
+                                <button type="submit" name="estado" value="{{ $opcion->value }}"
+                                        class="boton boton-bloque {{ $avanza ? 'boton-primario' : 'boton-secundario' }}">
+                                    <span class="icono" aria-hidden="true">{{ $avanza ? ($iconos[$opcion->value] ?? 'arrow_forward') : ($actual === \App\Enums\EstadoIncidencia::Resuelto ? 'replay' : 'undo') }}</span>
+                                    {{ $actual->accionHacia($opcion) }}
+                                </button>
+                            @endforeach
+                        </div>
                     </form>
                 </section>
             @endif

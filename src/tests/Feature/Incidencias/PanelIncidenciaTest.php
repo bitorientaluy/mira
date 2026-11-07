@@ -119,6 +119,20 @@ class PanelIncidenciaTest extends TestCase
             ->assertDontSee('value="Descartado"', false);
     }
 
+    public function test_una_incidencia_validada_ofrece_avanzar_o_volver_a_pendiente(): void
+    {
+        $incidencia = $this->nuevaIncidencia();
+        $this->cambiar($incidencia, ['estado' => 'Validada']);
+
+        $this->actingAs($this->operador)->get(route('panel.incidencias.show', $incidencia->id))
+            ->assertOk()
+            ->assertSeeInOrder(['Empezar trabajo', 'Volver a pendiente'])
+            ->assertDontSee('Marcar como resuelta');
+
+        $this->cambiar($incidencia, ['estado' => 'Pendiente'])->assertSessionHasNoErrors();
+        $this->assertSame(EstadoIncidencia::Pendiente, $incidencia->refresh()->estado);
+    }
+
     // ─── CP-06: acceso por rol ───────────────────────────────────────
 
     public static function rolesSinCambioDeEstado(): array
@@ -134,7 +148,7 @@ class PanelIncidenciaTest extends TestCase
 
         $this->actingAs($usuario)->get(route('panel.incidencias.show', $incidencia->id))
             ->assertOk()
-            ->assertDontSee('Cambiar estado');
+            ->assertDontSee('name="estado"', false);
 
         $this->cambiar($incidencia, ['estado' => 'Validada'], $usuario)->assertForbidden();
         $this->assertSame(EstadoIncidencia::Pendiente, $incidencia->refresh()->estado);
