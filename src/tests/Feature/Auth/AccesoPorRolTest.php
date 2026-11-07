@@ -66,6 +66,6 @@ class AccesoPorRolTest extends TestCase
         $this->actingAs(User::factory()->conRol($rol)->create())
             ->get('/panel')
             ->assertOk()
-            ->assertSee('Panel interno');
+            ->assertViewIs('panel.inicio');
     }
 }

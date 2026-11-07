@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\EstadoIncidencia;
+use App\Enums\MotivoDescarte;
+use App\Exceptions\TransicionInvalidaException;
 use App\Models\Categoria;
 use App\Models\Incidencia;
 use App\Models\User;
@@ -66,6 +68,51 @@ class IncidenciaService
             $this->fotos->borrar($rutaFoto);
             throw $e;
         }
+    }
+
+    /**
+     * Cambia el estado de una incidencia y registra el cambio en el historial (PU-06, CP-03).
+     * Bloquea la fila para que dos funcionarios no cambien el estado a la vez a partir del mismo estado.
+     *
+     * @throws TransicionInvalidaException si el flujo no permite el cambio o el motivo no corresponde
+     */
+    public function cambiarEstado(
+        Incidencia $incidencia,
+        EstadoIncidencia $nuevo,
+        User $usuario,
+        ?string $comentario = null,
+        ?MotivoDescarte $motivo = null,
+    ): Incidencia {
+        return DB::transaction(function () use ($incidencia, $nuevo, $usuario, $comentario, $motivo) {
+            $actual = Incidencia::whereKey($incidencia->id)->lockForUpdate()->firstOrFail();
+            $anterior = $actual->estado;
+
+            if (! $anterior->puedePasarA($nuevo)) {
+                throw TransicionInvalidaException::entre($anterior, $nuevo);
+            }
+            if ($nuevo === EstadoIncidencia::Descartado && $motivo === null) {
+                throw TransicionInvalidaException::faltaMotivo();
+            }
+            if ($nuevo !== EstadoIncidencia::Descartado && $motivo !== null) {
+                throw TransicionInvalidaException::motivoSobrante();
+            }
+
+            $actual->estado = $nuevo;
+            $actual->motivo_descarte = $motivo;
+            // Al reabrir (Resuelto → Pendiente) se borra la fecha de resolución
+            $actual->resuelto_en = $nuevo === EstadoIncidencia::Resuelto ? now() : null;
+            $actual->save();
+
+            $comentario = $comentario !== null ? trim($comentario) : null;
+            $actual->historial()->create([
+                'usuario_id' => $usuario->id,
+                'estado_anterior' => $anterior,
+                'estado_nuevo' => $nuevo,
+                'comentario' => $comentario === '' ? null : $comentario,
+            ]);
+
+            return $actual->refresh();
+        });
     }
 
     /**
