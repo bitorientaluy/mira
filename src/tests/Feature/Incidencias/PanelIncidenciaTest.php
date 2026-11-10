@@ -3,6 +3,7 @@
 namespace Tests\Feature\Incidencias;
 
 use App\Enums\EstadoIncidencia;
+use App\Enums\MotivoDescarte;
 use App\Models\Categoria;
 use App\Models\Incidencia;
 use App\Models\Rol;
@@ -93,7 +94,9 @@ class PanelIncidenciaTest extends TestCase
         return [
             'sin estado' => [['comentario' => 'x'], 'estado'],
             'estado inexistente' => [['estado' => 'Cerrada'], 'estado'],
-            'descartar (llega con T-201)' => [['estado' => 'Descartado'], 'estado'],
+            'descartar sin motivo' => [['estado' => 'Descartado'], 'motivo'],
+            'motivo inexistente' => [['estado' => 'Descartado', 'motivo' => 'Aburrido'], 'motivo'],
+            'motivo sin descartar' => [['estado' => 'Validada', 'motivo' => 'Falso'], 'motivo'],
             'comentario largo' => [['estado' => 'Validada', 'comentario' => str_repeat('a', 501)], 'comentario'],
         ];
     }
@@ -115,8 +118,40 @@ class PanelIncidenciaTest extends TestCase
         $this->actingAs($this->operador)->get(route('panel.incidencias.show', $incidencia->id))
             ->assertOk()
             ->assertSee('value="Validada"', false)
-            ->assertDontSee('value="Resuelto"', false)
+            ->assertSee('value="Descartado"', false)
+            ->assertDontSee('value="Resuelto"', false);
+    }
+
+    public function test_t201_el_operador_descarta_con_motivo_y_ya_no_hay_acciones(): void
+    {
+        $incidencia = $this->nuevaIncidencia();
+
+        $this->cambiar($incidencia, ['estado' => 'Descartado', 'motivo' => 'Duplicado', 'comentario' => 'Ya estaba reportada'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('exito', 'La incidencia pasó a «Descartado».');
+
+        $incidencia->refresh();
+        $this->assertSame(EstadoIncidencia::Descartado, $incidencia->estado);
+        $this->assertSame(MotivoDescarte::Duplicado, $incidencia->motivo_descarte);
+        $this->assertSame('Ya estaba reportada', $incidencia->historial->last()->comentario);
+
+        $this->actingAs($this->operador)->get(route('panel.incidencias.show', $incidencia->id))
+            ->assertOk()
+            ->assertSee('Duplicado')
+            ->assertDontSee('name="estado"', false);
+    }
+
+    public function test_t201_en_proceso_ya_no_se_puede_descartar(): void
+    {
+        $incidencia = $this->nuevaIncidencia();
+        $this->cambiar($incidencia, ['estado' => 'Validada']);
+        $this->cambiar($incidencia, ['estado' => 'En proceso']);
+
+        $this->actingAs($this->operador)->get(route('panel.incidencias.show', $incidencia->id))
             ->assertDontSee('value="Descartado"', false);
+
+        $this->cambiar($incidencia, ['estado' => 'Descartado', 'motivo' => 'Falso'])->assertSessionHasErrors('estado');
+        $this->assertSame(EstadoIncidencia::EnProceso, $incidencia->refresh()->estado);
     }
 
     public function test_una_incidencia_validada_ofrece_avanzar_o_volver_a_pendiente(): void

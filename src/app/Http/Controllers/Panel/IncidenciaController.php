@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Enums\EstadoIncidencia;
+use App\Enums\MotivoDescarte;
 use App\Exceptions\TransicionInvalidaException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CambiarEstadoRequest;
 use App\Models\Incidencia;
 use App\Services\FotoService;
 use App\Services\IncidenciaService;
+use App\ViewModels\AccionEstado;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -51,18 +53,21 @@ class IncidenciaController extends Controller
 
         return view('panel.incidencia', [
             'incidencia' => $incidencia,
-            // Descartar (con motivo) se agrega en T-201
-            'opciones' => array_values(array_filter(
-                $incidencia->estado->siguientes(),
-                fn (EstadoIncidencia $e) => $e !== EstadoIncidencia::Descartado,
-            )),
+            'acciones' => AccionEstado::desde($incidencia->estado),
+            'motivos' => MotivoDescarte::cases(),
         ]);
     }
 
     public function cambiarEstado(CambiarEstadoRequest $request, Incidencia $incidencia, IncidenciaService $servicio): RedirectResponse
     {
         try {
-            $actualizada = $servicio->cambiarEstado($incidencia, $request->estado(), $request->user(), $request->validated('comentario'));
+            $actualizada = $servicio->cambiarEstado(
+                $incidencia,
+                $request->estado(),
+                $request->user(),
+                $request->validated('comentario'),
+                $request->motivo(),
+            );
         } catch (TransicionInvalidaException $e) {
             return back()->withErrors(['estado' => $e->getMessage()])->withInput();
         }
