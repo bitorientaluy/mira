@@ -29,6 +29,8 @@
         <env name="DB_DATABASE" value="mira_test"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
+        <!-- Los pedidos de prueba llegan desde 127.0.0.1; PanelRedInternaTest cambia la IP de origen -->
+        <env name="MIRA_REDES_PANEL" value="127.0.0.1/32" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

@@ -94,6 +94,16 @@ docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_D
 
 `esquema.sql` borra y recrea las tablas: no correrlo sobre una base con datos que se quieran conservar.
 
+### Panel interno solo desde la red interna
+
+`/panel` responde únicamente a pedidos que vienen de las redes de `MIRA_REDES_PANEL` (en `src/.env`, separadas por coma); desde cualquier otra da 404, antes del login, y queda un aviso en `storage/logs/laravel.log` (T-202).
+
+- Local con Docker Desktop: `MIRA_REDES_PANEL=127.0.0.1/32,172.16.0.0/12` (PHP ve la IP del gateway de Docker, 172.x).
+- SRV-POSIX: `MIRA_REDES_PANEL=192.168.30.0/24` (VLAN 30). El proxy de la DMZ (192.168.20.10) no tiene que estar en la lista.
+- Sin la variable, solo se permite `127.0.0.1`.
+
+Para ver qué IP le llega a la app: `docker compose logs nginx` (primer campo de cada línea).
+
 ### Errores comunes
 
 - **"port is already allocated"**: cambiar `APP_PORT` en `.env`. Para ver quién usa el puerto: `netstat -ano | findstr :8080`.
