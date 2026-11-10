@@ -68,7 +68,7 @@
         </div>
 
         <div class="detalle-lateral">
-            @if ($puedeCambiar && count($opciones) > 0)
+            @if (count($opciones) > 0 && auth()->user()->can('cambiarEstado', $incidencia))
                 <section class="tarjeta">
                     <h2>Acciones</h2>
                     @include('partials.errores')

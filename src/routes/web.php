@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistroController;
 use App\Http\Controllers\IncidenciaController;
 use App\Http\Controllers\Panel\IncidenciaController as PanelIncidenciaController;
+use App\Models\Incidencia;
 use App\Models\Rol;
 use Illuminate\Support\Facades\Route;
 
@@ -30,24 +31,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/reportar', [IncidenciaController::class, 'create'])->name('incidencias.create');
         Route::post('/incidencias', [IncidenciaController::class, 'store'])->name('incidencias.store');
         Route::get('/incidencias/{incidencia}/confirmacion', [IncidenciaController::class, 'confirmacion'])
+            ->can('view', 'incidencia')
             ->name('incidencias.confirmacion');
     });
 });
 
-// Panel interno: primero la red (desde afuera da 404 sin pedir login, T-202), después la sesión y el rol
-Route::middleware([
-    'red.interna',
-    'auth',
-    'rol:'.implode(',', [Rol::OPERADOR, Rol::JEFE_AREA, Rol::EJECUTOR, Rol::ADMIN]),
-])->group(function () {
+// Panel interno: primero la red (desde afuera da 404 sin pedir login, T-202), después la sesión.
+// Los permisos salen de IncidenciaPolicy (T-201).
+Route::middleware(['red.interna', 'auth', 'can:viewAny,'.Incidencia::class])->group(function () {
     Route::get('/panel', [PanelIncidenciaController::class, 'index'])->name('panel.inicio');
     Route::get('/panel/incidencias/{incidencia}', [PanelIncidenciaController::class, 'show'])
-        ->whereNumber('incidencia')->name('panel.incidencias.show');
+        ->whereNumber('incidencia')->can('view', 'incidencia')->name('panel.incidencias.show');
     Route::get('/panel/incidencias/{incidencia}/foto', [PanelIncidenciaController::class, 'foto'])
-        ->name('panel.incidencias.foto');
-
-    // Cambiar el estado: solo operador y admin (jefe de área y ejecutor quedan para la siguiente etapa)
+        ->can('view', 'incidencia')->name('panel.incidencias.foto');
     Route::patch('/panel/incidencias/{incidencia}/estado', [PanelIncidenciaController::class, 'cambiarEstado'])
-        ->middleware('rol:'.implode(',', [Rol::OPERADOR, Rol::ADMIN]))
-        ->name('panel.incidencias.estado');
+        ->can('cambiarEstado', 'incidencia')->name('panel.incidencias.estado');
 });

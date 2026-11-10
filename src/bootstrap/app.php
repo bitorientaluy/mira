@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\RegistrarAccesoDenegado;
 use App\Http\Middleware\EnsureRol;
 use App\Http\Middleware\SoloRedInterna;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
@@ -28,6 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn (Request $request) => route($request->user()->rutaInicio()));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Los 403 (rol o Policy) quedan en el log; la respuesta no cambia (CP-06)
+        $exceptions->render(new RegistrarAccesoDenegado);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

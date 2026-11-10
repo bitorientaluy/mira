@@ -7,7 +7,6 @@ use App\Exceptions\TransicionInvalidaException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CambiarEstadoRequest;
 use App\Models\Incidencia;
-use App\Models\Rol;
 use App\Services\FotoService;
 use App\Services\IncidenciaService;
 use Illuminate\Http\RedirectResponse;
@@ -42,15 +41,16 @@ class IncidenciaController extends Controller
         ]);
     }
 
-    public function show(Request $request, int $incidencia): View
+    // El acceso lo controla IncidenciaPolicy desde la ruta
+    public function show(Incidencia $incidencia): View
     {
+        // Se vuelve a leer con el scope para tener lat y lng (la ubicación es binaria y está oculta)
         $incidencia = Incidencia::conCoordenadas()
             ->with(['categoria', 'area', 'ciudadano', 'historial.usuario'])
-            ->findOrFail($incidencia);
+            ->findOrFail($incidencia->id);
 
         return view('panel.incidencia', [
             'incidencia' => $incidencia,
-            'puedeCambiar' => $this->puedeCambiarEstado($request),
             // Descartar (con motivo) se agrega en T-201
             'opciones' => array_values(array_filter(
                 $incidencia->estado->siguientes(),
@@ -93,11 +93,5 @@ class IncidenciaController extends Controller
         return collect(EstadoIncidencia::cases())
             ->mapWithKeys(fn (EstadoIncidencia $e) => [$e->value => (int) ($porEstado[$e->value] ?? 0)])
             ->all();
-    }
-
-    // Debe coincidir con el middleware de la ruta PATCH; lo reemplaza IncidenciaPolicy en T-201
-    private function puedeCambiarEstado(Request $request): bool
-    {
-        return $request->user()->esRol(Rol::OPERADOR) || $request->user()->esRol(Rol::ADMIN);
     }
 }

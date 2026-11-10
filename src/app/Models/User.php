@@ -56,6 +56,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @param  list<string>  $nombres  ej. Rol::FUNCIONARIOS
+     */
+    public function tieneAlgunRol(array $nombres): bool
+    {
+        return in_array($this->rol?->nombre, $nombres, true);
+    }
+
+    /**
      * Nombre de la ruta a la que va el usuario al iniciar sesión.
      */
     public function rutaInicio(): string

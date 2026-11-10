@@ -15,7 +15,7 @@ class EnsureRol
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         abort_unless(
-            in_array($request->user()?->rol?->nombre, $roles, true),
+            $request->user()?->tieneAlgunRol($roles) === true,
             403,
             'No tenés permiso para acceder a esta página.'
         );

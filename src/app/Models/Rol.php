@@ -15,6 +15,12 @@ class Rol extends Model
     const EJECUTOR = 'ejecutor';
     const ADMIN = 'admin';
 
+    // Funcionarios: entran al panel interno
+    const FUNCIONARIOS = [self::OPERADOR, self::JEFE_AREA, self::EJECUTOR, self::ADMIN];
+
+    // Gestionan el estado de las incidencias (jefe de área y ejecutor quedan para la siguiente etapa)
+    const GESTORES = [self::OPERADOR, self::ADMIN];
+
     // Nombre para mostrar en pantalla
     const ETIQUETAS = [
         self::CIUDADANO => 'Ciudadano',
