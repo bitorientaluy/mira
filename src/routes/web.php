@@ -32,17 +32,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/incidencias/{incidencia}/confirmacion', [IncidenciaController::class, 'confirmacion'])
             ->name('incidencias.confirmacion');
     });
+});
 
-    Route::middleware('rol:'.implode(',', [Rol::OPERADOR, Rol::JEFE_AREA, Rol::EJECUTOR, Rol::ADMIN]))->group(function () {
-        Route::get('/panel', [PanelIncidenciaController::class, 'index'])->name('panel.inicio');
-        Route::get('/panel/incidencias/{incidencia}', [PanelIncidenciaController::class, 'show'])
-            ->whereNumber('incidencia')->name('panel.incidencias.show');
-        Route::get('/panel/incidencias/{incidencia}/foto', [PanelIncidenciaController::class, 'foto'])
-            ->name('panel.incidencias.foto');
+// Panel interno: primero la red (desde afuera da 404 sin pedir login, T-202), después la sesión y el rol
+Route::middleware([
+    'red.interna',
+    'auth',
+    'rol:'.implode(',', [Rol::OPERADOR, Rol::JEFE_AREA, Rol::EJECUTOR, Rol::ADMIN]),
+])->group(function () {
+    Route::get('/panel', [PanelIncidenciaController::class, 'index'])->name('panel.inicio');
+    Route::get('/panel/incidencias/{incidencia}', [PanelIncidenciaController::class, 'show'])
+        ->whereNumber('incidencia')->name('panel.incidencias.show');
+    Route::get('/panel/incidencias/{incidencia}/foto', [PanelIncidenciaController::class, 'foto'])
+        ->name('panel.incidencias.foto');
 
-        // Cambiar el estado: solo operador y admin (jefe de área y ejecutor quedan para la siguiente etapa)
-        Route::patch('/panel/incidencias/{incidencia}/estado', [PanelIncidenciaController::class, 'cambiarEstado'])
-            ->middleware('rol:'.implode(',', [Rol::OPERADOR, Rol::ADMIN]))
-            ->name('panel.incidencias.estado');
-    });
+    // Cambiar el estado: solo operador y admin (jefe de área y ejecutor quedan para la siguiente etapa)
+    Route::patch('/panel/incidencias/{incidencia}/estado', [PanelIncidenciaController::class, 'cambiarEstado'])
+        ->middleware('rol:'.implode(',', [Rol::OPERADOR, Rol::ADMIN]))
+        ->name('panel.incidencias.estado');
 });
