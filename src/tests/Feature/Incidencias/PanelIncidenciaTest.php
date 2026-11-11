@@ -4,6 +4,7 @@ namespace Tests\Feature\Incidencias;
 
 use App\Enums\EstadoIncidencia;
 use App\Enums\MotivoDescarte;
+use App\Models\Area;
 use App\Models\Categoria;
 use App\Models\Incidencia;
 use App\Models\Rol;
@@ -139,6 +140,40 @@ class PanelIncidenciaTest extends TestCase
             ->assertOk()
             ->assertSee('Duplicado')
             ->assertDontSee('name="estado"', false);
+    }
+
+    public function test_t201_al_validar_el_operador_elige_el_area(): void
+    {
+        $incidencia = $this->nuevaIncidencia();
+        $otra = Area::create(['nombre' => 'Arbolado']);
+
+        $this->actingAs($this->operador)->get(route('panel.incidencias.show', $incidencia->id))
+            ->assertSee('Área responsable')
+            ->assertSee('Arbolado');
+
+        $this->cambiar($incidencia, ['estado' => 'Validada', 'area_id' => $otra->id])->assertSessionHasNoErrors();
+
+        $this->assertSame($otra->id, $incidencia->refresh()->area_id);
+    }
+
+    public function test_t201_un_area_inexistente_se_rechaza(): void
+    {
+        $incidencia = $this->nuevaIncidencia();
+
+        $this->cambiar($incidencia, ['estado' => 'Validada', 'area_id' => 999])->assertSessionHasErrors('area_id');
+        $this->assertSame(EstadoIncidencia::Pendiente, $incidencia->refresh()->estado);
+    }
+
+    public function test_t201_el_area_enviada_con_otro_boton_se_ignora(): void
+    {
+        $incidencia = $this->nuevaIncidencia();
+        $areaOriginal = $incidencia->area_id;
+        $otra = Area::create(['nombre' => 'Arbolado']);
+
+        $this->cambiar($incidencia, ['estado' => 'Descartado', 'motivo' => 'Falso', 'area_id' => $otra->id])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($areaOriginal, $incidencia->refresh()->area_id);
     }
 
     public function test_t201_en_proceso_ya_no_se_puede_descartar(): void

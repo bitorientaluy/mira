@@ -57,6 +57,14 @@ final readonly class AccionEstado
         return new self($destino, $actual->accionHacia($destino), $icono, $tipo);
     }
 
+    /**
+     * Validar (desde Pendiente) es el momento en que el operador confirma o corrige el área.
+     */
+    public function confirmaArea(): bool
+    {
+        return $this->destino === EstadoIncidencia::Validada && $this->tipo === self::AVANZAR;
+    }
+
     public function esDescarte(): bool
     {
         return $this->tipo === self::DESCARTAR;

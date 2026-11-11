@@ -40,6 +40,17 @@ class AccionEstadoTest extends TestCase
         $this->assertSame([], AccionEstado::desde(E::Descartado));
     }
 
+    public function test_solo_validar_desde_pendiente_confirma_el_area(): void
+    {
+        $confirman = fn (E $actual) => array_values(array_map(
+            fn (AccionEstado $a) => $a->texto,
+            array_filter(AccionEstado::desde($actual), fn (AccionEstado $a) => $a->confirmaArea()),
+        ));
+
+        $this->assertSame(['Validar'], $confirman(E::Pendiente));
+        $this->assertSame([], $confirman(E::EnProceso)); // "Volver a validada" no confirma el área
+    }
+
     public function test_descartar_usa_el_estilo_de_peligro(): void
     {
         $descarte = collect(AccionEstado::desde(E::Pendiente))->first(fn (AccionEstado $a) => $a->esDescarte());

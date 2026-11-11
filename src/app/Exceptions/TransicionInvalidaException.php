@@ -25,4 +25,9 @@ class TransicionInvalidaException extends DomainException
     {
         return new self('El motivo solo corresponde cuando la incidencia se descarta.');
     }
+
+    public static function areaSobrante(): self
+    {
+        return new self('El área solo se confirma al validar la incidencia.');
+    }
 }

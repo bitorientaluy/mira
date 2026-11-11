@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Data\CambioDeEstado;
 use App\Enums\EstadoIncidencia;
 use App\Enums\MotivoDescarte;
+use App\Models\Area;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,7 +13,7 @@ class CambiarEstadoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // el acceso por rol lo controla el middleware de la ruta
+        return true; // quién puede cambiar el estado lo decide IncidenciaPolicy desde la ruta (->can)
     }
 
     /**
@@ -30,6 +32,13 @@ class CambiarEstadoRequest extends FormRequest
                 'nullable',
                 Rule::enum(MotivoDescarte::class),
             ],
+            // El formulario manda el área con cualquier botón: solo se tiene en cuenta al validar
+            'area_id' => [
+                'exclude_unless:estado,'.EstadoIncidencia::Validada->value,
+                'nullable',
+                'integer',
+                Rule::exists('area', 'id'),
+            ],
             'comentario' => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -45,17 +54,24 @@ class CambiarEstadoRequest extends FormRequest
             'motivo.required_if' => 'Elegí el motivo del descarte.',
             'motivo.prohibited_unless' => 'El motivo solo corresponde al descartar.',
             'motivo.enum' => 'El motivo elegido no es válido.',
+            'area_id.exists' => 'El área elegida no existe.',
+            'area_id.integer' => 'El área elegida no es válida.',
             'comentario.max' => 'El comentario puede tener hasta 500 caracteres.',
         ];
     }
 
-    public function estado(): EstadoIncidencia
+    /**
+     * El pedido ya validado, listo para IncidenciaService::cambiarEstado().
+     */
+    public function cambio(): CambioDeEstado
     {
-        return EstadoIncidencia::from($this->validated('estado'));
-    }
+        $areaId = $this->validated('area_id');
 
-    public function motivo(): ?MotivoDescarte
-    {
-        return MotivoDescarte::tryFrom((string) $this->validated('motivo'));
+        return new CambioDeEstado(
+            estado: EstadoIncidencia::from($this->validated('estado')),
+            comentario: $this->validated('comentario'),
+            motivo: MotivoDescarte::tryFrom((string) $this->validated('motivo')),
+            area: $areaId !== null ? Area::find($areaId) : null,
+        );
     }
 }

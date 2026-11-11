@@ -72,6 +72,7 @@
                 @php
                     $normales = array_filter($acciones, fn ($a) => ! $a->esDescarte());
                     $descarte = collect($acciones)->first(fn ($a) => $a->esDescarte());
+                    $confirmaArea = collect($acciones)->contains(fn ($a) => $a->confirmaArea());
                 @endphp
                 <section class="tarjeta">
                     <h2>Acciones</h2>
@@ -87,6 +88,20 @@
                                       maxlength="500" placeholder="Ej.: se coordinó la cuadrilla para mañana">{{ old('comentario') }}</textarea>
                             <span class="campo-ayuda">Queda en el historial junto con el cambio.</span>
                         </div>
+
+                        @if ($confirmaArea)
+                            <div class="campo">
+                                <label for="area_id">Área responsable</label>
+                                <select id="area_id" name="area_id" class="entrada @error('area_id') entrada-invalida @enderror">
+                                    @foreach ($areas as $area)
+                                        <option value="{{ $area->id }}" @selected((int) old('area_id', $incidencia->area_id) === $area->id)>
+                                            {{ $area->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <span class="campo-ayuda">La sugirió la categoría; se confirma al validar.</span>
+                            </div>
+                        @endif
 
                         <div class="acciones-estado">
                             @foreach ($normales as $accion)

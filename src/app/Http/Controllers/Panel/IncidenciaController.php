@@ -7,6 +7,7 @@ use App\Enums\MotivoDescarte;
 use App\Exceptions\TransicionInvalidaException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CambiarEstadoRequest;
+use App\Models\Area;
 use App\Models\Incidencia;
 use App\Services\FotoService;
 use App\Services\IncidenciaService;
@@ -55,19 +56,14 @@ class IncidenciaController extends Controller
             'incidencia' => $incidencia,
             'acciones' => AccionEstado::desde($incidencia->estado),
             'motivos' => MotivoDescarte::cases(),
+            'areas' => Area::orderBy('nombre')->get(['id', 'nombre']),
         ]);
     }
 
     public function cambiarEstado(CambiarEstadoRequest $request, Incidencia $incidencia, IncidenciaService $servicio): RedirectResponse
     {
         try {
-            $actualizada = $servicio->cambiarEstado(
-                $incidencia,
-                $request->estado(),
-                $request->user(),
-                $request->validated('comentario'),
-                $request->motivo(),
-            );
+            $actualizada = $servicio->cambiarEstado($incidencia, $request->cambio(), $request->user());
         } catch (TransicionInvalidaException $e) {
             return back()->withErrors(['estado' => $e->getMessage()])->withInput();
         }
