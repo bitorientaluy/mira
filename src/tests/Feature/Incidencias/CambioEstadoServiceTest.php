@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Incidencias;
 
+use App\Data\CambioDeEstado;
 use App\Enums\EstadoIncidencia;
 use App\Enums\MotivoDescarte;
 use App\Exceptions\TransicionInvalidaException;
+use App\Models\Area;
 use App\Models\Categoria;
 use App\Models\Incidencia;
 use App\Models\Rol;
@@ -43,7 +45,7 @@ class CambioEstadoServiceTest extends TestCase
 
     private function cambiar(EstadoIncidencia $nuevo, ?string $comentario = null, ?MotivoDescarte $motivo = null): Incidencia
     {
-        return $this->servicio->cambiarEstado($this->incidencia, $nuevo, $this->operador, $comentario, $motivo);
+        return $this->servicio->cambiarEstado($this->incidencia, new CambioDeEstado($nuevo, $comentario, $motivo), $this->operador);
     }
 
     public function test_cp03_recorre_el_flujo_completo_y_registra_cada_paso_en_el_historial(): void
@@ -85,7 +87,7 @@ class CambioEstadoServiceTest extends TestCase
         $this->cambiar(EstadoIncidencia::Validada);
 
         $this->expectException(TransicionInvalidaException::class);
-        $this->servicio->cambiarEstado($copiaVieja, EstadoIncidencia::Validada, $this->operador);
+        $this->servicio->cambiarEstado($copiaVieja, new CambioDeEstado(EstadoIncidencia::Validada), $this->operador);
     }
 
     public function test_reabrir_vuelve_a_pendiente_y_borra_la_fecha_de_resolucion(): void
@@ -133,6 +135,46 @@ class CambioEstadoServiceTest extends TestCase
     {
         $this->expectException(TransicionInvalidaException::class);
         $this->cambiar(EstadoIncidencia::Validada, null, MotivoDescarte::Falso);
+    }
+
+    public function test_t201_al_validar_se_puede_corregir_el_area_y_queda_en_el_historial(): void
+    {
+        $otra = Area::create(['nombre' => 'Arbolado']);
+        $original = $this->incidencia->area->nombre;
+
+        $validada = $this->servicio->cambiarEstado(
+            $this->incidencia,
+            new CambioDeEstado(EstadoIncidencia::Validada, 'Son ramas caídas', area: $otra),
+            $this->operador,
+        );
+
+        $this->assertSame($otra->id, $validada->area_id);
+        $this->assertSame("Área cambiada de «{$original}» a «Arbolado». Son ramas caídas", $validada->historial->last()->comentario);
+    }
+
+    public function test_t201_confirmar_la_misma_area_no_agrega_nota(): void
+    {
+        $validada = $this->servicio->cambiarEstado(
+            $this->incidencia,
+            new CambioDeEstado(EstadoIncidencia::Validada, area: $this->incidencia->area),
+            $this->operador,
+        );
+
+        $this->assertSame($this->incidencia->area_id, $validada->area_id);
+        $this->assertNull($validada->historial->last()->comentario);
+    }
+
+    public function test_t201_el_area_solo_se_cambia_al_validar(): void
+    {
+        $this->cambiar(EstadoIncidencia::Validada);
+        $otra = Area::create(['nombre' => 'Arbolado']);
+
+        $this->expectException(TransicionInvalidaException::class);
+        $this->servicio->cambiarEstado(
+            $this->incidencia,
+            new CambioDeEstado(EstadoIncidencia::EnProceso, area: $otra),
+            $this->operador,
+        );
     }
 
     public function test_comentario_vacio_se_guarda_como_null(): void

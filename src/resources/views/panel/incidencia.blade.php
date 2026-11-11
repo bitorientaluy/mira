@@ -68,7 +68,12 @@
         </div>
 
         <div class="detalle-lateral">
-            @if ($puedeCambiar && count($opciones) > 0)
+            @if (count($acciones) > 0 && auth()->user()->can('cambiarEstado', $incidencia))
+                @php
+                    $normales = array_filter($acciones, fn ($a) => ! $a->esDescarte());
+                    $descarte = collect($acciones)->first(fn ($a) => $a->esDescarte());
+                    $confirmaArea = collect($acciones)->contains(fn ($a) => $a->confirmaArea());
+                @endphp
                 <section class="tarjeta">
                     <h2>Acciones</h2>
                     @include('partials.errores')
@@ -84,22 +89,56 @@
                             <span class="campo-ayuda">Queda en el historial junto con el cambio.</span>
                         </div>
 
-                        {{-- Cada transición permitida es un botón: primero las que avanzan, después volver atrás o reabrir --}}
-                        @php
-                            $actual = $incidencia->estado;
-                            $iconos = ['Validada' => 'verified', 'En proceso' => 'engineering', 'Resuelto' => 'task_alt'];
-                            usort($opciones, fn ($a, $b) => $actual->avanzaA($b) <=> $actual->avanzaA($a));
-                        @endphp
+                        @if ($confirmaArea)
+                            <div class="campo">
+                                <label for="area_id">Área responsable</label>
+                                <select id="area_id" name="area_id" class="entrada @error('area_id') entrada-invalida @enderror">
+                                    @foreach ($areas as $area)
+                                        <option value="{{ $area->id }}" @selected((int) old('area_id', $incidencia->area_id) === $area->id)>
+                                            {{ $area->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <span class="campo-ayuda">La sugirió la categoría; se confirma al validar.</span>
+                            </div>
+                        @endif
+
                         <div class="acciones-estado">
-                            @foreach ($opciones as $opcion)
-                                @php $avanza = $actual->avanzaA($opcion); @endphp
-                                <button type="submit" name="estado" value="{{ $opcion->value }}"
-                                        class="boton boton-bloque {{ $avanza ? 'boton-primario' : 'boton-secundario' }}">
-                                    <span class="icono" aria-hidden="true">{{ $avanza ? ($iconos[$opcion->value] ?? 'arrow_forward') : ($actual === \App\Enums\EstadoIncidencia::Resuelto ? 'replay' : 'undo') }}</span>
-                                    {{ $actual->accionHacia($opcion) }}
+                            @foreach ($normales as $accion)
+                                <button type="submit" name="estado" value="{{ $accion->destino->value }}"
+                                        class="boton boton-bloque {{ $accion->claseBoton() }}">
+                                    <span class="icono" aria-hidden="true">{{ $accion->icono }}</span> {{ $accion->texto }}
                                 </button>
                             @endforeach
                         </div>
+
+                        {{-- Descartar pide el motivo: se despliega sin JavaScript y queda abierto si hubo un error --}}
+                        @if ($descarte)
+                            <details class="descarte" @if (old('estado') === $descarte->destino->value || $errors->has('motivo')) open @endif>
+                                <summary class="boton boton-bloque boton-peligro-suave">
+                                    <span class="icono" aria-hidden="true">{{ $descarte->icono }}</span> {{ $descarte->texto }}…
+                                </summary>
+
+                                <fieldset class="campo">
+                                    <legend class="etiqueta">Motivo</legend>
+                                    <div class="chips chips-envolver">
+                                        @foreach ($motivos as $motivo)
+                                            <label class="chip">
+                                                <input class="solo-lectores" type="radio" name="motivo" value="{{ $motivo->value }}"
+                                                       @checked(old('motivo') === $motivo->value)>
+                                                {{ $motivo->value }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <span class="campo-ayuda">Descartar no se puede deshacer.</span>
+                                </fieldset>
+
+                                <button type="submit" name="estado" value="{{ $descarte->destino->value }}"
+                                        class="boton boton-bloque {{ $descarte->claseBoton() }}">
+                                    <span class="icono" aria-hidden="true">{{ $descarte->icono }}</span> Confirmar descarte
+                                </button>
+                            </details>
+                        @endif
                     </form>
                 </section>
             @endif
@@ -114,6 +153,10 @@
                                     {{ $paso->estado_anterior->value }} <span class="icono" aria-label="a">arrow_forward</span>
                                 @endif
                                 <strong>{{ $paso->estado_nuevo->value }}</strong>
+                                {{-- Descartado no tiene salida: el motivo guardado corresponde a este paso --}}
+                                @if ($paso->estado_nuevo === \App\Enums\EstadoIncidencia::Descartado && $incidencia->motivo_descarte)
+                                    <span class="texto-suave">({{ $incidencia->motivo_descarte->value }})</span>
+                                @endif
                             </span>
                             <span class="texto-suave texto-chico">
                                 {{ $paso->creado_en->format('d/m/Y H:i') }} · {{ $paso->usuario->nombre }}

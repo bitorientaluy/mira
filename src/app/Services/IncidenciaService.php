@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Data\CambioDeEstado;
 use App\Enums\EstadoIncidencia;
-use App\Enums\MotivoDescarte;
 use App\Exceptions\TransicionInvalidaException;
 use App\Models\Categoria;
 use App\Models\Incidencia;
@@ -73,46 +73,69 @@ class IncidenciaService
     /**
      * Cambia el estado de una incidencia y registra el cambio en el historial (PU-06, CP-03).
      * Bloquea la fila para que dos funcionarios no cambien el estado a la vez a partir del mismo estado.
+     * Al validar, el operador confirma o corrige el área (por defecto, la de la categoría).
      *
-     * @throws TransicionInvalidaException si el flujo no permite el cambio o el motivo no corresponde
+     * @throws TransicionInvalidaException si el flujo no permite el cambio, o el motivo o el área no corresponden
      */
-    public function cambiarEstado(
-        Incidencia $incidencia,
-        EstadoIncidencia $nuevo,
-        User $usuario,
-        ?string $comentario = null,
-        ?MotivoDescarte $motivo = null,
-    ): Incidencia {
-        return DB::transaction(function () use ($incidencia, $nuevo, $usuario, $comentario, $motivo) {
-            $actual = Incidencia::whereKey($incidencia->id)->lockForUpdate()->firstOrFail();
+    public function cambiarEstado(Incidencia $incidencia, CambioDeEstado $cambio, User $usuario): Incidencia
+    {
+        return DB::transaction(function () use ($incidencia, $cambio, $usuario) {
+            $actual = Incidencia::with('area')->whereKey($incidencia->id)->lockForUpdate()->firstOrFail();
             $anterior = $actual->estado;
+            $this->validarCambio($anterior, $cambio);
 
-            if (! $anterior->puedePasarA($nuevo)) {
-                throw TransicionInvalidaException::entre($anterior, $nuevo);
-            }
-            if ($nuevo === EstadoIncidencia::Descartado && $motivo === null) {
-                throw TransicionInvalidaException::faltaMotivo();
-            }
-            if ($nuevo !== EstadoIncidencia::Descartado && $motivo !== null) {
-                throw TransicionInvalidaException::motivoSobrante();
+            $notaArea = null;
+            if ($cambio->area !== null && $cambio->area->id !== $actual->area_id) {
+                $notaArea = "Área cambiada de «{$actual->area->nombre}» a «{$cambio->area->nombre}».";
+                $actual->area_id = $cambio->area->id;
             }
 
-            $actual->estado = $nuevo;
-            $actual->motivo_descarte = $motivo;
+            $actual->estado = $cambio->estado;
+            $actual->motivo_descarte = $cambio->motivo;
             // Al reabrir (Resuelto → Pendiente) se borra la fecha de resolución
-            $actual->resuelto_en = $nuevo === EstadoIncidencia::Resuelto ? now() : null;
+            $actual->resuelto_en = $cambio->estado === EstadoIncidencia::Resuelto ? now() : null;
             $actual->save();
 
-            $comentario = $comentario !== null ? trim($comentario) : null;
             $actual->historial()->create([
                 'usuario_id' => $usuario->id,
                 'estado_anterior' => $anterior,
-                'estado_nuevo' => $nuevo,
-                'comentario' => $comentario === '' ? null : $comentario,
+                'estado_nuevo' => $cambio->estado,
+                'comentario' => self::unirTextos($notaArea, $cambio->comentario),
             ]);
 
             return $actual->refresh();
         });
+    }
+
+    /**
+     * Reglas del flujo, con el estado leído de la base (no el de la página abierta).
+     */
+    private function validarCambio(EstadoIncidencia $anterior, CambioDeEstado $cambio): void
+    {
+        $descarta = $cambio->estado === EstadoIncidencia::Descartado;
+
+        if (! $anterior->puedePasarA($cambio->estado)) {
+            throw TransicionInvalidaException::entre($anterior, $cambio->estado);
+        }
+        if ($descarta && $cambio->motivo === null) {
+            throw TransicionInvalidaException::faltaMotivo();
+        }
+        if (! $descarta && $cambio->motivo !== null) {
+            throw TransicionInvalidaException::motivoSobrante();
+        }
+        if ($cambio->area !== null && $cambio->estado !== EstadoIncidencia::Validada) {
+            throw TransicionInvalidaException::areaSobrante();
+        }
+    }
+
+    /**
+     * Junta la nota automática y el comentario del funcionario; null si no queda texto.
+     */
+    private static function unirTextos(?string ...$partes): ?string
+    {
+        $texto = implode(' ', array_filter(array_map(fn ($p) => trim((string) $p), $partes), fn ($p) => $p !== ''));
+
+        return $texto === '' ? null : $texto;
     }
 
     /**

@@ -7,7 +7,6 @@ use App\Models\Categoria;
 use App\Models\Incidencia;
 use App\Services\IncidenciaService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class IncidenciaController extends Controller
@@ -32,11 +31,9 @@ class IncidenciaController extends Controller
         return redirect()->route('incidencias.confirmacion', $incidencia);
     }
 
-    public function confirmacion(Request $request, Incidencia $incidencia): View
+    // El acceso (solo el autor) lo controla IncidenciaPolicy desde la ruta
+    public function confirmacion(Incidencia $incidencia): View
     {
-        // Solo el autor ve la confirmación (las Policies llegan en T-201)
-        abort_unless($incidencia->ciudadano_id === $request->user()->id, 403);
-
         return view('ciudadano.confirmacion', ['incidencia' => $incidencia->load('categoria')]);
     }
 }

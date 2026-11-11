@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Enums\EstadoIncidencia;
+use App\Enums\MotivoDescarte;
 use App\Exceptions\TransicionInvalidaException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CambiarEstadoRequest;
+use App\Models\Area;
 use App\Models\Incidencia;
-use App\Models\Rol;
 use App\Services\FotoService;
 use App\Services\IncidenciaService;
+use App\ViewModels\AccionEstado;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -42,27 +44,26 @@ class IncidenciaController extends Controller
         ]);
     }
 
-    public function show(Request $request, int $incidencia): View
+    // El acceso lo controla IncidenciaPolicy desde la ruta
+    public function show(Incidencia $incidencia): View
     {
+        // Se vuelve a leer con el scope para tener lat y lng (la ubicación es binaria y está oculta)
         $incidencia = Incidencia::conCoordenadas()
             ->with(['categoria', 'area', 'ciudadano', 'historial.usuario'])
-            ->findOrFail($incidencia);
+            ->findOrFail($incidencia->id);
 
         return view('panel.incidencia', [
             'incidencia' => $incidencia,
-            'puedeCambiar' => $this->puedeCambiarEstado($request),
-            // Descartar (con motivo) se agrega en T-201
-            'opciones' => array_values(array_filter(
-                $incidencia->estado->siguientes(),
-                fn (EstadoIncidencia $e) => $e !== EstadoIncidencia::Descartado,
-            )),
+            'acciones' => AccionEstado::desde($incidencia->estado),
+            'motivos' => MotivoDescarte::cases(),
+            'areas' => Area::orderBy('nombre')->get(['id', 'nombre']),
         ]);
     }
 
     public function cambiarEstado(CambiarEstadoRequest $request, Incidencia $incidencia, IncidenciaService $servicio): RedirectResponse
     {
         try {
-            $actualizada = $servicio->cambiarEstado($incidencia, $request->estado(), $request->user(), $request->validated('comentario'));
+            $actualizada = $servicio->cambiarEstado($incidencia, $request->cambio(), $request->user());
         } catch (TransicionInvalidaException $e) {
             return back()->withErrors(['estado' => $e->getMessage()])->withInput();
         }
@@ -93,11 +94,5 @@ class IncidenciaController extends Controller
         return collect(EstadoIncidencia::cases())
             ->mapWithKeys(fn (EstadoIncidencia $e) => [$e->value => (int) ($porEstado[$e->value] ?? 0)])
             ->all();
-    }
-
-    // Debe coincidir con el middleware de la ruta PATCH; lo reemplaza IncidenciaPolicy en T-201
-    private function puedeCambiarEstado(Request $request): bool
-    {
-        return $request->user()->esRol(Rol::OPERADOR) || $request->user()->esRol(Rol::ADMIN);
     }
 }
