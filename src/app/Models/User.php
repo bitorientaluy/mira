@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 
 // rol_id queda fuera de Fillable: nadie puede asignarse un rol desde un formulario.
 // La cédula se oculta al serializar (JSON, API) por ser un dato personal.
-// google_id y foto también quedan fuera de Fillable: los asigna CuentaGoogleService (T-411).
+// google_id también queda fuera de Fillable: lo asigna CuentaGoogleService (T-411).
 #[Fillable(['nombre', 'email', 'cedula', 'password', 'telefono'])]
 #[Hidden(['cedula', 'google_id', 'password', 'remember_token'])]
 class User extends Authenticatable

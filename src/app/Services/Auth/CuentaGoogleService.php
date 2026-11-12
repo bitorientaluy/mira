@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
  * - Se identifica por google_id; el email solo se usa para vincular una cuenta de ciudadano
  *   que ya existía, y únicamente si Google garantiza que está verificado.
  * - La cédula no la da Google: se pide en el primer ingreso.
+ * - No se guarda la foto de Google: MIRA no la usa (minimización de datos personales).
  */
 class CuentaGoogleService
 {
@@ -42,8 +43,7 @@ class CuentaGoogleService
                 throw CuentaGoogleRechazadaException::inactiva();
             }
 
-            // La foto puede cambiar en Google; el nombre no se pisa por si el ciudadano lo corrigió
-            $usuario->foto = $perfil->foto;
+            // El nombre no se pisa en los ingresos siguientes, por si el ciudadano lo corrigió
             $usuario->save();
 
             return $usuario;

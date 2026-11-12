@@ -34,7 +34,6 @@ class CuentaGoogleServiceTest extends TestCase
             'id' => '1098765432109876543210',
             'email' => 'ana@gmail.com',
             'nombre' => 'Ana Pérez',
-            'foto' => 'https://lh3.googleusercontent.com/a/foto',
             'emailVerificado' => true,
         ], $cambios));
     }
@@ -47,19 +46,17 @@ class CuentaGoogleServiceTest extends TestCase
         $this->assertTrue($usuario->esRol(Rol::CIUDADANO));
         $this->assertSame('ana@gmail.com', $usuario->email);
         $this->assertSame('1098765432109876543210', $usuario->google_id);
-        $this->assertSame('https://lh3.googleusercontent.com/a/foto', $usuario->foto);
         $this->assertNull($usuario->getRawOriginal('password'));
         $this->assertNull($usuario->cedula);
     }
 
-    public function test_la_segunda_vez_reutiliza_el_usuario_y_actualiza_la_foto(): void
+    public function test_la_segunda_vez_reutiliza_el_usuario_sin_pisar_el_nombre(): void
     {
         $primero = $this->servicio->usuarioPara($this->perfil());
-        $segundo = $this->servicio->usuarioPara($this->perfil(['foto' => 'https://lh3.googleusercontent.com/a/nueva', 'nombre' => 'Otro']));
+        $segundo = $this->servicio->usuarioPara($this->perfil(['nombre' => 'Otro']));
 
         $this->assertSame($primero->id, $segundo->id);
-        $this->assertSame('https://lh3.googleusercontent.com/a/nueva', $segundo->foto);
-        $this->assertSame('Ana Pérez', $segundo->nombre); // el nombre no se pisa
+        $this->assertSame('Ana Pérez', $segundo->nombre);
         $this->assertSame(1, User::count());
     }
 

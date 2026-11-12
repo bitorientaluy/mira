@@ -14,7 +14,6 @@ final readonly class PerfilGoogle
         public string $id,
         public string $email,
         public string $nombre,
-        public ?string $foto,
         public bool $emailVerificado,
     ) {}
 
@@ -28,7 +27,6 @@ final readonly class PerfilGoogle
             id: (string) $usuario->getId(),
             email: mb_strtolower(trim((string) $usuario->getEmail())),
             nombre: trim((string) ($usuario->getName() ?: $usuario->getEmail())),
-            foto: $usuario->getAvatar() ?: null,
             emailVerificado: filter_var($verificado, FILTER_VALIDATE_BOOL),
         );
     }
