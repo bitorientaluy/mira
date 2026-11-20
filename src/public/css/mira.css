@@ -444,6 +444,12 @@ fieldset.campo legend { padding: 0; margin-bottom: 0.375rem; }
 .datos-reporte dd { margin: 0; font-weight: 600; text-align: right; }
 .estado-vacio .acciones { width: 100%; }
 
+/* ─── Login con Google (T-411) ─────────────────────────────────── */
+.separador { display: flex; align-items: center; gap: 0.75rem; }
+.separador::before, .separador::after { content: ''; flex: 1; height: 1px; background: var(--borde); }
+.boton-google { color: #3c4043; background: var(--superficie); border-color: #dadce0; }
+.boton-google:hover { background: #f8f9fa; box-shadow: var(--sombra-1); }
+
 /* ─── Panel interno (T-116) ────────────────────────────────────── */
 /* Colores por estado: el texto cumple contraste AA sobre su fondo */
 .insignia-pendiente { color: #8a5300; background: #fff1d6; }

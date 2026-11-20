@@ -2,6 +2,7 @@
 
 use App\Exceptions\RegistrarAccesoDenegado;
 use App\Http\Middleware\EnsureRol;
+use App\Http\Middleware\ExigirCedula;
 use App\Http\Middleware\SoloRedInterna;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'rol' => EnsureRol::class,
             'red.interna' => SoloRedInterna::class,
+            'cedula' => ExigirCedula::class,
         ]);
 
         // Laravel ordena auth antes que el resto: así la red se revisa primero y desde afuera no aparece ni el login (T-202)

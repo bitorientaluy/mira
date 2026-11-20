@@ -33,6 +33,8 @@
                 </button>
             </form>
 
+            @include('auth.partials.boton-google')
+
             <p class="texto-chico texto-suave">¿No tenés cuenta? <a href="{{ route('registro') }}">Registrate</a></p>
         </section>
     </div>

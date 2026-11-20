@@ -23,6 +23,14 @@ use Illuminate\Support\Str;
 class CuentaGoogleService
 {
     /**
+     * Sin GOOGLE_CLIENT_ID en el .env, el botón no aparece y las rutas dan 404.
+     */
+    public static function habilitado(): bool
+    {
+        return filled(config('services.google.client_id')) && filled(config('services.google.client_secret'));
+    }
+
+    /**
      * @throws CuentaGoogleRechazadaException
      */
     public function usuarioPara(PerfilGoogle $perfil): User

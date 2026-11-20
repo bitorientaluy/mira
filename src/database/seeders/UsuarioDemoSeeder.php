@@ -17,7 +17,8 @@ class UsuarioDemoSeeder extends Seeder
         $area = Area::where('nombre', Area::LIMPIEZA_URBANA)->firstOrFail();
 
         $usuarios = [
-            ['nombre' => 'Ciudadano Demo', 'email' => 'ciudadano@mira.local', 'rol' => Rol::CIUDADANO, 'area' => false],
+            // Cédula de prueba: sin ella el ciudadano iría a completarla antes de reportar (T-411)
+            ['nombre' => 'Ciudadano Demo', 'email' => 'ciudadano@mira.local', 'rol' => Rol::CIUDADANO, 'area' => false, 'cedula' => '10000001'],
             ['nombre' => 'Operador Demo', 'email' => 'operador@mira.local', 'rol' => Rol::OPERADOR, 'area' => false],
             ['nombre' => 'Jefe de Área Demo', 'email' => 'jefe@mira.local', 'rol' => Rol::JEFE_AREA, 'area' => true],
             ['nombre' => 'Ejecutor Demo', 'email' => 'ejecutor@mira.local', 'rol' => Rol::EJECUTOR, 'area' => true],
@@ -28,6 +29,7 @@ class UsuarioDemoSeeder extends Seeder
             $usuario = User::firstOrNew(['email' => $datos['email']]);
             $usuario->fill(['nombre' => $datos['nombre'], 'password' => config('mira.demo_password')]);
             $usuario->rol_id = Rol::where('nombre', $datos['rol'])->value('id');
+            $usuario->cedula ??= $datos['cedula'] ?? null;
             $usuario->save();
 
             if ($datos['area']) {
