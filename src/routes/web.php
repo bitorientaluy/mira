@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\CompletarCedulaController;
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistroController;
 use App\Http\Controllers\IncidenciaController;
@@ -20,12 +22,24 @@ Route::middleware('guest')->group(function () {
     Route::post('/registro', [RegistroController::class, 'store'])->name('registro.store');
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
+
+    // Login y registro de ciudadanos con Google (T-411), con límite de intentos
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::get('/auth/google', [GoogleController::class, 'redirigir'])->name('login.google');
+        Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('login.google.callback');
+    });
 });
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
+    // Primer ingreso con Google: completar la cédula (queda fuera de 'cedula' para no entrar en bucle)
     Route::middleware('rol:'.Rol::CIUDADANO)->group(function () {
+        Route::get('/perfil/cedula', [CompletarCedulaController::class, 'create'])->name('perfil.cedula');
+        Route::post('/perfil/cedula', [CompletarCedulaController::class, 'store'])->name('perfil.cedula.store');
+    });
+
+    Route::middleware(['rol:'.Rol::CIUDADANO, 'cedula'])->group(function () {
         Route::view('/inicio', 'ciudadano.inicio')->name('ciudadano.inicio');
 
         Route::get('/reportar', [IncidenciaController::class, 'create'])->name('incidencias.create');

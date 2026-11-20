@@ -55,6 +55,8 @@
                 </button>
             </form>
 
+            @include('auth.partials.boton-google')
+
             <p class="texto-chico texto-suave">¿Ya tenés cuenta? <a href="{{ route('login') }}">Iniciá sesión</a></p>
         </section>
     </div>

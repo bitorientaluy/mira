@@ -28,10 +28,20 @@ class UserFactory extends Factory
         return [
             'nombre' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            // Todo usuario registrado con el formulario tiene cédula (8 dígitos, sin puntos ni guion)
+            'cedula' => fake()->unique()->numerify('########'),
             'password' => static::$password ??= Hash::make('password'),
             'rol_id' => fn () => Rol::firstOrCreate(['nombre' => Rol::CIUDADANO])->id,
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Ciudadano que entró con Google y todavía no cargó la cédula (T-411).
+     */
+    public function sinCedula(): static
+    {
+        return $this->state(fn (array $attributes) => ['cedula' => null]);
     }
 
     /**

@@ -18,6 +18,17 @@ class RegistroRequest extends FormRequest
     }
 
     /**
+     * También las usa CompletarCedulaRequest (primer ingreso con Google, T-411).
+     * Sin validar el dígito verificador por ahora; max:8 por el tamaño de la columna.
+     *
+     * @return list<string>
+     */
+    public static function reglasCedula(): array
+    {
+        return ['required', 'string', 'max:8', 'unique:usuario,cedula'];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -25,8 +36,7 @@ class RegistroRequest extends FormRequest
         return [
             'nombre' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:150', 'unique:usuario,email'],
-            // Sin validar el dígito verificador por ahora; max:8 por el tamaño de la columna
-            'cedula' => ['required', 'string', 'max:8', 'unique:usuario,cedula'],
+            'cedula' => self::reglasCedula(),
             'password' => ['required', 'confirmed', Password::min(8)],
             'telefono' => ['nullable', 'string', 'max:20'],
         ];
